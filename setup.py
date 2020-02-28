@@ -48,6 +48,7 @@ REQUIRED = [
     "bokeh",
     "coverage",
     "xlrd",
+    "pint",
 ]
 
 # What packages are optional?
@@ -61,6 +62,7 @@ EXTRAS = {
         "sphinx_bootstrap_theme",
         "nbsphinx",
         "numpydoc",
+        "sphinxcontrib-bibtex",
     ]
 }
 

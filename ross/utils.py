@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import re
 from bokeh.models import LogColorMapper
 from bokeh.palettes import Viridis256
 from bokeh.plotting import figure
@@ -57,22 +58,24 @@ def read_table_file(file, element, sheet_name=0, n=0, sheet_type="Model"):
         optional_parameter_columns["cyy"] = ["cyy"]
         optional_parameter_columns["cxy"] = ["cxy"]
         optional_parameter_columns["cyx"] = ["cyx"]
-        optional_parameter_columns["w"] = ["w", "speed"]
+        optional_parameter_columns["frequency"] = ["frequency", "speed"]
         default_dictionary["kyy"] = None
         default_dictionary["kxy"] = 0
         default_dictionary["kyx"] = 0
         default_dictionary["cyy"] = None
         default_dictionary["cxy"] = 0
         default_dictionary["cyx"] = 0
-        default_dictionary["w"] = None
+        default_dictionary["frequency"] = None
     elif element == "shaft":
         if sheet_type == "Model":
             header_key_word = "od_left"
         else:
             header_key_word = "material"
         parameter_columns["L"] = ["length"]
-        parameter_columns["i_d"] = ["i_d", "id", "id_left"]
-        parameter_columns["o_d"] = ["o_d", "od", "od_left"]
+        parameter_columns["idl"] = ["i_d_l", "idl", "id_left"]
+        parameter_columns["odl"] = ["o_d_l", "odl", "od_left"]
+        parameter_columns["idr"] = ["i_d_r", "idr", "id_right"]
+        parameter_columns["odr"] = ["o_d_r", "odr", "od_right"]
         parameter_columns["material"] = ["material", "matnum"]
         optional_parameter_columns["n"] = ["n", "elemnum"]
         optional_parameter_columns["axial_force"] = [
@@ -117,7 +120,11 @@ def read_table_file(file, element, sheet_name=0, n=0, sheet_type="Model"):
                     if row[i].lower() == header_key_word:
                         header_index = index
                         header_found = True
-                if "inches" in row[i].lower() or "lbm" in row[i].lower():
+                if (
+                    "inches" in row[i].lower()
+                    or "lbm" in row[i].lower()
+                    or "lb" in row[i].lower()
+                ):
                     convert_to_metric = True
                 if "rpm" in row[i].lower():
                     convert_to_rad_per_sec = True
@@ -241,15 +248,19 @@ def read_table_file(file, element, sheet_name=0, n=0, sheet_type="Model"):
                 else:
                     continue
     if element == "shaft":
-        new_n = parameters["n"]
-        for i in range(0, df.shape[0]):
-            new_n[i] -= 1
-        parameters["n"] = new_n
         if sheet_type == "Model":
             new_material = parameters["material"]
             for i in range(0, df.shape[0]):
                 new_material[i] = "shaft_mat_" + str(int(new_material[i]))
             parameters["material"] = new_material
+
+    # change xltrc index to python index (0 based)
+    if element in ("shaft", "disk"):
+        new_n = parameters["n"]
+        for i in range(0, df.shape[0]):
+            new_n[i] -= 1
+        parameters["n"] = new_n
+
     if convert_to_metric:
         for i in range(0, df.shape[0]):
             if element == "bearing":
@@ -263,8 +274,10 @@ def read_table_file(file, element, sheet_name=0, n=0, sheet_type="Model"):
                 parameters["cyx"][i] = parameters["cyx"][i] * 175.126_836_986_4
             if element == "shaft":
                 parameters["L"][i] = parameters["L"][i] * 0.0254
-                parameters["i_d"][i] = parameters["i_d"][i] * 0.0254
-                parameters["o_d"][i] = parameters["o_d"][i] * 0.0254
+                parameters["idl"][i] = parameters["idl"][i] * 0.0254
+                parameters["odl"][i] = parameters["odl"][i] * 0.0254
+                parameters["idr"][i] = parameters["idr"][i] * 0.0254
+                parameters["odr"][i] = parameters["odr"][i] * 0.0254
                 parameters["axial_force"][i] = (
                     parameters["axial_force"][i] * 4.448_221_615_255
                 )
@@ -275,7 +288,9 @@ def read_table_file(file, element, sheet_name=0, n=0, sheet_type="Model"):
     if convert_to_rad_per_sec:
         for i in range(0, df.shape[0]):
             if element == "bearing":
-                parameters["w"][i] = parameters["w"][i] * 0.104_719_755_119_7
+                parameters["frequency"][i] = (
+                    parameters["frequency"][i] * 0.104_719_755_119_7
+                )
     parameters.update(new_materials)
     return parameters
 
@@ -398,3 +413,26 @@ def visualize_matrix(rotor, matrix=None, frequency=None):
     )
 
     return fig
+
+
+def convert(name):
+    """Converts a CamelCase str to a underscore_case str
+
+    Parameters
+    ----------
+    file: str
+        Path to the file containing the shaft parameters.
+
+    Returns
+    -------
+    underscore_case string
+
+    Examples
+    --------
+    >>> convert('CamelCase')
+    'camel_case'
+    """
+
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+

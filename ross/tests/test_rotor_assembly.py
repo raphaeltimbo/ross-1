@@ -10,7 +10,7 @@ from ross.materials import steel
 from ross.rotor_assembly import *
 from ross.rotor_assembly import MAC_modes
 from ross.shaft_element import *
-from ross.point_mass import PointMass
+from ross.point_mass import *
 
 test_dir = os.path.dirname(__file__)
 
@@ -23,10 +23,10 @@ def rotor1():
     o_d_ = 0.05
 
     tim0 = ShaftElement(
-        le_, i_d_, o_d_, steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+        le_, i_d_, o_d_, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
     )
     tim1 = ShaftElement(
-        le_, i_d_, o_d_, steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+        le_, i_d_, o_d_, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
     )
 
     shaft_elm = [tim0, tim1]
@@ -75,10 +75,10 @@ def test_raise_if_element_outside_shaft():
     o_d_ = 0.05
 
     tim0 = ShaftElement(
-        le_, i_d_, o_d_, steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+        le_, i_d_, o_d_, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
     )
     tim1 = ShaftElement(
-        le_, i_d_, o_d_, steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+        le_, i_d_, o_d_, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
     )
 
     shaft_elm = [tim0, tim1]
@@ -93,7 +93,7 @@ def test_raise_if_element_outside_shaft():
     assert "Trying to set disk or bearing outside shaft" == str(excinfo.value)
 
     with pytest.raises(ValueError) as excinfo:
-        Rotor(shaft_elm, bearing_seal_elements=bearings)
+        Rotor(shaft_elm, bearing_elements=bearings)
     assert "Trying to set disk or bearing outside shaft" == str(excinfo.value)
 
 
@@ -105,10 +105,10 @@ def rotor2():
     o_d_ = 0.05
 
     tim0 = ShaftElement(
-        le_, i_d_, o_d_, steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+        le_, i_d_, o_d_, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
     )
     tim1 = ShaftElement(
-        le_, i_d_, o_d_, steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+        le_, i_d_, o_d_, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
     )
 
     shaft_elm = [tim0, tim1]
@@ -262,7 +262,7 @@ def rotor3():
 
     shaft_elem = [
         ShaftElement(
-            l, i_d, o_d, steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+            l, i_d, o_d, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
         )
         for l in L
     ]
@@ -289,7 +289,7 @@ def rotor3_odd():
 
     shaft_elem = [
         ShaftElement(
-            l, i_d, o_d, steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+            l, i_d, o_d, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
         )
         for l in L
     ]
@@ -528,8 +528,8 @@ def rotor4():
     n1 = len(L) // 2
     L0 = sum(L[:n0])
     L1 = sum(L[n1:])
-    sec0 = ShaftElement.section(L0, n0, i_d, o_d, steel)
-    sec1 = ShaftElement.section(L1, n1, i_d, o_d, steel)
+    sec0 = ShaftElement.section(L0, n0, i_d, o_d, material=steel)
+    sec1 = ShaftElement.section(L1, n1, i_d, o_d, material=steel)
 
     shaft_elem = [sec0, sec1]
 
@@ -714,8 +714,8 @@ def test_mesh_convergence(rotor3):
     assert_allclose(rotor3.shaft_elements[0].L, 0.015625, atol=1e-06)
     assert_allclose(rotor3.disk_elements[0].n, 32, atol=0)
     assert_allclose(rotor3.disk_elements[1].n, 64, atol=0)
-    assert_allclose(rotor3.bearing_seal_elements[0].n, 0, atol=0)
-    assert_allclose(rotor3.bearing_seal_elements[1].n, 96, atol=0)
+    assert_allclose(rotor3.bearing_elements[0].n, 0, atol=0)
+    assert_allclose(rotor3.bearing_elements[1].n, 96, atol=0)
     assert rotor3.error_arr[-1] <= 1e-08 * 100
 
 
@@ -771,7 +771,7 @@ def rotor5():
 
     shaft_elem = [
         ShaftElement(
-            l, i_d, o_d, steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+            l, i_d, o_d, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
         )
         for l in L
     ]
@@ -860,7 +860,7 @@ def rotor6():
 
     shaft_elem = [
         ShaftElement(
-            l, i_d, o_d, steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+            l, i_d, o_d, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
         )
         for l in L
     ]
@@ -938,14 +938,90 @@ def test_static_analysis_rotor6(rotor6):
     )
 
 
+@pytest.fixture
+def coaxrotor():
+    #  Co-axial rotor system with 2 shafts, 4 disks and
+    #  4 bearings (3 to ground and 1 to body) 
+    i_d = 0
+    o_d = 0.05
+    n = 10
+    L = [0.25 for _ in range(n)]
+
+    axial_shaft = [ShaftElement(l, i_d, o_d, material=steel) for l in L]
+
+    i_d = 0.25
+    o_d = 0.30
+    n = 6
+    L = [0.25 for _ in range(n)]
+
+    coaxial_shaft = [ShaftElement(l, i_d, o_d, material=steel) for l in L]
+
+    disk0 = DiskElement.from_geometry(
+        n=1, material=steel, width=0.07, i_d=0.05, o_d=0.28
+    )
+    disk1 = DiskElement.from_geometry(
+        n=9, material=steel, width=0.07, i_d=0.05, o_d=0.28
+    )
+    disk2 = DiskElement.from_geometry(
+        n=13, material=steel, width=0.07, i_d=0.20, o_d=0.48
+    )
+    disk3 = DiskElement.from_geometry(
+        n=15, material=steel, width=0.07, i_d=0.20, o_d=0.48
+    )
+
+    shaft = [axial_shaft, coaxial_shaft]
+    disks = [disk0, disk1, disk2, disk3]
+
+    stfx = 1e6
+    stfy = 1e6
+    bearing0 = BearingElement(0, kxx=stfx, kyy=stfy, cxx=0)
+    bearing1 = BearingElement(10, kxx=stfx, kyy=stfy, cxx=0)
+    bearing2 = BearingElement(11, kxx=stfx, kyy=stfy, cxx=0)
+    bearing3 = BearingElement(8, n_link=17, kxx=stfx, kyy=stfy, cxx=0)
+    bearings = [bearing0, bearing1, bearing2, bearing3]
+
+    return CoAxialRotor(shaft, disks, bearings)
+
+
+def test_coaxial_rotor_assembly(coaxrotor):
+    # fmt: off
+    assert list(coaxrotor.df["shaft_number"]) == [
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0
+    ]
+    assert coaxrotor.nodes_pos == [
+        0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5,
+        0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0
+    ]
+    assert list(coaxrotor.df_shaft["nodes_pos_l"]) == [
+        0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25,
+        0.5, 0.75, 1.0, 1.25, 1.5, 1.75
+    ]
+    assert list(coaxrotor.df_shaft["nodes_pos_r"]) == [
+        0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5,
+        0.75, 1.0, 1.25, 1.5, 1.75, 2.0
+    ]
+    assert list(coaxrotor.df["y_pos"].dropna()) == [
+        0.025, 0.05, 0.025, 0.05, 0.025, 0.15, 0.3, 0.3
+    ]
+    assert list(np.round(coaxrotor.df["y_pos_sup"].dropna(), 3)) == [
+        0.319, 0.125, 0.319, 0.444
+    ]
+    # fmt: on
+
+
 def test_from_section():
     #  Rotor built from classmethod from_section
     #  2 disks and 2 bearings
     leng_data = [0.5, 1.0, 2.0, 1.0, 0.5]
-    leng_data2 = [0.5, 1.0, 2.0, 1.0]
-    o_ds_data = [0.1, 0.2, 0.3, 0.2, 0.1]
-    o_ds_data2 = [0.1, 0.2, 0.3, 0.2]
-    i_ds_data = [0, 0, 0, 0, 0]
+    leng_data_error = [0.5, 1.0, 2.0, 1.0]
+
+    odl_data = [0.1, 0.2, 0.3, 0.2, 0.1]
+    odr_data_error = [0.1, 0.2, 0.3, 0.2]
+
+    idl_data = [0, 0, 0, 0, 0]
+    material = steel
+    material_error = [steel, steel]
     disk_data = [
         DiskElement.from_geometry(n=2, material=steel, width=0.07, i_d=0.05, o_d=0.28),
         DiskElement.from_geometry(n=3, material=steel, width=0.07, i_d=0.05, o_d=0.35),
@@ -957,11 +1033,11 @@ def test_from_section():
 
     rotor1 = Rotor.from_section(
         leng_data=leng_data,
-        o_ds_data=o_ds_data,
-        i_ds_data=i_ds_data,
+        idl_data=idl_data,
+        odl_data=odl_data,
+        material_data=material,
         disk_data=disk_data,
         brg_seal_data=brg_seal_data,
-        w=0,
         nel_r=4,
     )
 
@@ -973,32 +1049,57 @@ def test_from_section():
     assert_allclose(rotor1.shaft_elements[16].L, 0.125, atol=0)
     assert_allclose(rotor1.disk_elements[0].n, 8, atol=0)
     assert_allclose(rotor1.disk_elements[1].n, 12, atol=0)
-    assert_allclose(rotor1.bearing_seal_elements[0].n, 0, atol=0)
-    assert_allclose(rotor1.bearing_seal_elements[1].n, 20, atol=0)
+    assert_allclose(rotor1.bearing_elements[0].n, 0, atol=0)
+    assert_allclose(rotor1.bearing_elements[1].n, 20, atol=0)
 
     with pytest.raises(ValueError) as excinfo:
         Rotor.from_section(
-            leng_data=leng_data2,
-            o_ds_data=o_ds_data,
-            i_ds_data=i_ds_data,
+            leng_data=leng_data_error,
+            idl_data=idl_data,
+            odl_data=odl_data,
+            material_data=material,
             disk_data=disk_data,
             brg_seal_data=brg_seal_data,
-            w=0,
             nel_r=4,
         )
-    assert "The matrices lenght do not match." == str(excinfo.value)
+    assert "The lists size do not match (leng_data, odl_data and idl_data)." == str(excinfo.value)
 
     with pytest.raises(ValueError) as excinfo:
         Rotor.from_section(
             leng_data=leng_data,
-            o_ds_data=o_ds_data2,
-            i_ds_data=i_ds_data,
+            idl_data=idl_data,
+            odl_data=odl_data,
+            odr_data=odr_data_error,
+            material_data=material,
             disk_data=disk_data,
             brg_seal_data=brg_seal_data,
-            w=0,
             nel_r=4,
         )
-    assert "The matrices lenght do not match." == str(excinfo.value)
+    assert "The lists size do not match (leng_data, odr_data and idr_data)." == str(excinfo.value)
+
+    with pytest.raises(AttributeError) as excinfo:
+        Rotor.from_section(
+            leng_data=leng_data,
+            idl_data=idl_data,
+            odl_data=odl_data,
+            material_data=None,
+            disk_data=disk_data,
+            brg_seal_data=brg_seal_data,
+            nel_r=4,
+        )
+    assert "Please define a material or a list of materials" == str(excinfo.value)
+
+    with pytest.raises(IndexError) as excinfo:
+        Rotor.from_section(
+            leng_data=leng_data,
+            idl_data=idl_data,
+            odl_data=odl_data,
+            material_data=material_error,
+            disk_data=disk_data,
+            brg_seal_data=brg_seal_data,
+            nel_r=4,
+        )
+    assert "material_data size does not match size of other lists" == str(excinfo.value)
 
 
 @pytest.fixture
@@ -1012,7 +1113,7 @@ def rotor7():
 
     shaft_elem = [
         ShaftElement(
-            l, i_d, o_d, steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+            l, i_d, o_d, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
         )
         for l in L
     ]
@@ -1240,7 +1341,7 @@ def test_save_load():
     assert a == b
 
 
-def test_rotor_link():
+def test_global_index():
     i_d = 0
     o_d = 0.05
     n = 6
@@ -1248,7 +1349,7 @@ def test_rotor_link():
 
     shaft_elem = [
         ShaftElement(
-            l, i_d, o_d, steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+            l, i_d, o_d, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
         )
         for l in L
     ]
@@ -1263,19 +1364,53 @@ def test_rotor_link():
     stfx = 1e6
     stfy = 0.8e6
     bearing0 = BearingElement(0, n_link=7, kxx=stfx, kyy=stfy, cxx=0)
-    support = BearingElement(7, kxx=stfx, kyy=stfy, cxx=0)
-    bearing1 = BearingElement(6, kxx=stfx, kyy=stfy, cxx=0)
+    support0 = BearingElement(7, kxx=stfx, kyy=stfy, cxx=0, tag="Support0")
+    bearing1 = BearingElement(6, n_link=8, kxx=stfx, kyy=stfy, cxx=0)
+    support1 = BearingElement(8, kxx=stfx, kyy=stfy, cxx=0, tag="Support1")
 
-    point_mass = PointMass(7, m=1.0)
+    point_mass0 = PointMass(7, m=1.0)
+    point_mass1 = PointMass(8, m=1.0)
 
     rotor = Rotor(
-        shaft_elem, [disk0, disk1], [bearing0, support, bearing1], [point_mass]
+            shaft_elem,
+            [disk0, disk1],
+            [bearing0, bearing1, support0, support1],
+            [point_mass0, point_mass1]
     )
 
-    modal = rotor.run_modal(1000 / 9.5492965964254)
+    shaft = rotor.shaft_elements
+    disks = rotor.disk_elements
+    bearings = rotor.bearing_elements
+    pointmass = rotor.point_mass_elements
 
-    wn_expected = np.array(
-        [82.43809938, 87.5639844, 239.36021417, 261.15187937, 646.59858922, 688.428424]
-    )
+    assert shaft[0].dof_global_index.x_0 == 0
+    assert shaft[0].dof_global_index.y_0 == 1
+    assert shaft[0].dof_global_index.alpha_0 == 2
+    assert shaft[0].dof_global_index.beta_0 == 3
+    assert shaft[0].dof_global_index.x_1 == 4
+    assert shaft[0].dof_global_index.y_1 == 5
+    assert shaft[0].dof_global_index.alpha_1 == 6
+    assert shaft[0].dof_global_index.beta_1 == 7
 
-    assert_allclose(modal.wn, wn_expected)
+    assert disks[0].dof_global_index.x_2 == 8
+    assert disks[0].dof_global_index.y_2 == 9
+    assert disks[0].dof_global_index.alpha_2 == 10
+    assert disks[0].dof_global_index.beta_2 == 11
+
+    assert bearings[0].dof_global_index.x_0 == 0
+    assert bearings[0].dof_global_index.y_0 == 1
+    assert bearings[0].dof_global_index.x_7 == 28
+    assert bearings[0].dof_global_index.y_7 == 29
+    assert bearings[1].dof_global_index.x_6 == 24
+    assert bearings[1].dof_global_index.y_6 == 25
+    assert bearings[1].dof_global_index.x_8 == 30
+    assert bearings[1].dof_global_index.y_8 == 31
+    assert bearings[2].dof_global_index.x_7 == 28
+    assert bearings[2].dof_global_index.y_7 == 29
+    assert bearings[3].dof_global_index.x_8 == 30
+    assert bearings[3].dof_global_index.y_8 == 31
+
+    assert pointmass[0].dof_global_index.x_7 == 28
+    assert pointmass[0].dof_global_index.y_7 == 29
+    assert pointmass[1].dof_global_index.x_8 == 30
+    assert pointmass[1].dof_global_index.y_8 == 31

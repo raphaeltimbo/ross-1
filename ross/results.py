@@ -203,7 +203,7 @@ class ModalResults:
     def kappa(self, node, w, wd=True):
         r"""Calculates kappa for a given node and natural frequency.
 
-        w is the the index of the natural frequency of interest.
+        frequency is the the index of the natural frequency of interest.
         The function calculates the orbit parameter :math:`\kappa`:
 
         .. math::
@@ -428,9 +428,9 @@ class ModalResults:
 
         return xn, yn, zn, x_circles, y_circles, z_circles_pos, nn
 
-    def plot_mode(self, mode=None, evec=None, fig=None, ax=None):
+    def plot_mode3D(self, mode=None, evec=None, fig=None, ax=None):
         """
-        Method that plots the mode shapes.
+        Method that plots (3D view) the mode shapes.
 
         Parameters
         ----------
@@ -493,10 +493,87 @@ class ModalResults:
         ax.set_xlim(zn_cl0 - 0.1, zn_cl1 + 0.1)
 
         ax.set_title(
-            f"$speed$ = {self.speed:.1f} rad/s\n$"
-            f"\omega_d$ = {self.wd[mode]:.1f} rad/s\n"
-            f"$log dec$ = {self.log_dec[mode]:.1f}"
+            f"$mode$ {mode + 1} - $speed$ = {self.speed:.1f} rad/s\n"
+            f"$\omega_n$ = {self.wn[mode]:.1f} rad/s\n"
+            f"$log dec$ = {self.log_dec[mode]:.1f}\n"
+            f"$whirl\_direction$ = {self.whirl_direction()[mode]}",
+            fontsize=18,
         )
+        ax.tick_params(axis='both', which='major', labelsize=18)
+        ax.tick_params(axis='both', which='minor', labelsize=18)
+
+        return fig, ax
+
+    def plot_mode2D(self, mode=None, evec=None, fig=None, ax=None):
+        """
+        Method that plots (2D view) the mode shapes.
+
+        Parameters
+        ----------
+        mode : int
+            The n'th vibration mode
+            Default is None
+        evec : array
+            Array containing the system eigenvectors
+        fig : matplotlib figure
+            The figure object with the plot.
+        ax : matplotlib axes
+            The axes object with the plot.
+
+        Returns
+        -------
+        fig : matplotlib figure
+            Returns the figure object with the plot.
+        ax : matplotlib axes
+            Returns the axes object with the plot.
+        """
+        xn, yn, zn, xc, yc, zc_pos, nn = self.calc_mode_shape(mode=mode)
+        nodes_pos = self.nodes_pos
+
+        vn = np.zeros(len(zn))
+        for i in range(len(zn)):
+            theta = np.arctan(xn[i] / yn[i])
+            vn[i] = xn[i] * np.sin(theta) + yn[i] * np.cos(theta)
+
+        # remove repetitive values from zn and vn
+        idx_remove = []
+        for i in range(1, len(zn)):
+            if zn[i] == zn[i - 1]:
+                idx_remove.append(i)
+        zn = np.delete(zn, idx_remove)
+        vn = np.delete(vn, idx_remove)
+
+        if fig is None and ax is None:
+            fig, ax = plt.subplots()
+
+        colors = dict(Backward="firebrick", Mixed="black", Forward="royalblue")
+        whirl_dir = colors[self.whirl_direction()[mode]]
+
+        ax.plot(zn, vn, c=whirl_dir)
+        label = (
+            f"Mode {mode + 1} | {self.whirl_direction()[mode]} | "
+            f"wn = {self.wn[mode]:.1f} rad/s | "
+            f"log dec = {self.log_dec[mode]:.1f}"
+         )
+
+        mode_shape = mpl.lines.Line2D([], [], lw=0, label=label)
+
+        # plot center line
+        zn_cl0 = -(zn[-1] * 0.1)
+        zn_cl1 = zn[-1] * 1.1
+        ax.plot(nodes_pos, np.zeros(len(nodes_pos)), "k-.", linewidth=0.8)
+
+        ax.set_ylim(-1.3, 1.3)
+        ax.set_xlim(zn_cl0, zn_cl1)
+
+        ax.set_title("Mode Shape", fontsize=14)
+        ax.tick_params(axis='both', which='major', labelsize=14)
+        ax.tick_params(axis='both', which='minor', labelsize=14)
+
+        legend = plt.legend(handles=[mode_shape], loc=0, framealpha=0.1)
+        ax.add_artist(legend)
+        ax.set_xlabel("Rotor length")
+        ax.set_ylabel("Non dimentional rotor deformation")
 
         return fig, ax
 
@@ -710,8 +787,10 @@ class CampbellResults:
             x_axis_label="Rotor speed (rad/s)",
             y_axis_label="Damped natural frequencies (rad/s)",
         )
-        camp.xaxis.axis_label_text_font_size = "14pt"
-        camp.yaxis.axis_label_text_font_size = "14pt"
+        camp.xaxis.axis_label_text_font_size = "20pt"
+        camp.yaxis.axis_label_text_font_size = "20pt"
+        camp.axis.major_label_text_font_size = "16pt"
+        camp.title.text_font_size = "14pt"
         hover = False
 
         color_mapper = linear_cmap(
@@ -764,7 +843,7 @@ class CampbellResults:
                             color=bokeh_colors[9],
                             muted_color=bokeh_colors[9],
                             muted_alpha=0.2,
-                            legend="Crit. Speed",
+                            legend_label="Crit. Speed",
                             name="critspeed",
                         )
                         hover = HoverTool(names=["critspeed"])
@@ -795,7 +874,7 @@ class CampbellResults:
                         muted_color=color_mapper,
                         muted_alpha=0.2,
                         source=source,
-                        legend=legend,
+                        legend_label=legend,
                     )
 
         harm_color = bp.Category20[20]
@@ -807,15 +886,15 @@ class CampbellResults:
                 color=harm_color[j],
                 line_dash="dotdash",
                 line_alpha=1.0,
-                legend=str(harm) + "x speed",
+                legend_label=str(harm) + "x speed",
                 muted_color=harm_color[j],
                 muted_alpha=0.2,
             )
 
         # turn legend glyphs black
-        camp.scatter(0, 0, color="black", size=0, marker="^", legend="Foward")
-        camp.scatter(0, 0, color="black", size=0, marker="o", legend="Mixed")
-        camp.scatter(0, 0, color="black", size=0, marker="v", legend="Backward")
+        camp.scatter(0, 0, color="black", size=0, marker="^", legend_label="Foward")
+        camp.scatter(0, 0, color="black", size=0, marker="o", legend_label="Mixed")
+        camp.scatter(0, 0, color="black", size=0, marker="v", legend_label="Backward")
 
         color_bar = ColorBar(
             color_mapper=color_mapper["transform"],
@@ -823,15 +902,17 @@ class CampbellResults:
             location=(0, 0),
             title="log dec",
             title_text_font_style="bold italic",
+            title_text_font_size="16pt",
             title_text_align="center",
             major_label_text_align="left",
+            major_label_text_font_size="16pt",
         )
         if hover:
             camp.add_tools(hover)
         camp.legend.background_fill_alpha = 0.1
         camp.legend.click_policy = "mute"
         camp.legend.location = "top_left"
-        camp.legend.label_text_font_size = "8pt"
+        camp.legend.label_text_font_size = "16pt"
         camp.add_layout(color_bar, "right")
 
         return camp
@@ -987,11 +1068,13 @@ class FrequencyResponseResults:
             width=640,
             height=240,
             title="Frequency Response - Magnitude",
-            x_axis_label="Frequency",
+            x_axis_label="Frequency (rad/s)",
             y_axis_label=y_axis_label,
         )
-        mag_plot.xaxis.axis_label_text_font_size = "14pt"
-        mag_plot.yaxis.axis_label_text_font_size = "14pt"
+        mag_plot.xaxis.axis_label_text_font_size = "20pt"
+        mag_plot.yaxis.axis_label_text_font_size = "20pt"
+        mag_plot.axis.major_label_text_font_size = "16pt"
+        mag_plot.title.text_font_size = "14pt"
 
         source = ColumnDataSource(dict(x=frequency_range, y=mag[inp, out, :]))
         mag_plot.line(
@@ -1074,11 +1157,13 @@ class FrequencyResponseResults:
             width=640,
             height=240,
             title="Frequency Response - Phase",
-            x_axis_label="Frequency",
+            x_axis_label="Frequency (rad/s)",
             y_axis_label="Phase",
         )
-        phase_plot.xaxis.axis_label_text_font_size = "14pt"
-        phase_plot.yaxis.axis_label_text_font_size = "14pt"
+        phase_plot.xaxis.axis_label_text_font_size = "20pt"
+        phase_plot.yaxis.axis_label_text_font_size = "20pt"
+        phase_plot.axis.major_label_text_font_size = "16pt"
+        phase_plot.title.text_font_size = "14pt"
 
         source = ColumnDataSource(dict(x=frequency_range, y=phase[inp, out, :]))
         phase_plot.line(
@@ -1372,8 +1457,10 @@ class ForcedResponseResults:
             x_range=[0, max(frequency_range)],
             y_axis_label=y_axis_label,
         )
-        mag_plot.xaxis.axis_label_text_font_size = "14pt"
-        mag_plot.yaxis.axis_label_text_font_size = "14pt"
+        mag_plot.xaxis.axis_label_text_font_size = "20pt"
+        mag_plot.yaxis.axis_label_text_font_size = "20pt"
+        mag_plot.axis.major_label_text_font_size = "16pt"
+        mag_plot.title.text_font_size = "14pt"
 
         source = ColumnDataSource(dict(x=frequency_range, y=mag[dof]))
         mag_plot.line(
@@ -1452,7 +1539,7 @@ class ForcedResponseResults:
             width=640,
             height=240,
             title="Forced Response - Phase",
-            x_axis_label="Frequency",
+            x_axis_label="Frequency (rad/s)",
             x_range=[0, max(frequency_range)],
             y_axis_label="Phase",
         )
@@ -1465,8 +1552,10 @@ class ForcedResponseResults:
             line_alpha=1.0,
             line_width=3,
         )
-        phase_plot.xaxis.axis_label_text_font_size = "14pt"
-        phase_plot.yaxis.axis_label_text_font_size = "14pt"
+        phase_plot.xaxis.axis_label_text_font_size = "20pt"
+        phase_plot.yaxis.axis_label_text_font_size = "20pt"
+        phase_plot.axis.major_label_text_font_size = "16pt"
+        phase_plot.title.text_font_size = "14pt"
 
         return phase_plot
 
@@ -1655,8 +1744,9 @@ class StaticResults:
             x_axis_label="Shaft lenght",
             y_axis_label="Lateral displacement",
         )
-        fig.xaxis.axis_label_text_font_size = "14pt"
-        fig.yaxis.axis_label_text_font_size = "14pt"
+        fig.xaxis.axis_label_text_font_size = "20pt"
+        fig.yaxis.axis_label_text_font_size = "20pt"
+        fig.axis.major_label_text_font_size = "16pt"
         fig.title.text_font_size = "14pt"
 
         interpolated = interpolate.interp1d(
@@ -1741,7 +1831,8 @@ class StaticResults:
             y_range=[-3 * y_start, 3 * y_start],
         )
         fig.yaxis.visible = False
-        fig.xaxis.axis_label_text_font_size = "14pt"
+        fig.xaxis.axis_label_text_font_size = "20pt"
+        fig.axis.major_label_text_font_size = "16pt"
         fig.title.text_font_size = "14pt"
 
         fig.line("x", "y1", source=source, line_width=5, line_color=bokeh_colors[0])
@@ -1884,8 +1975,9 @@ class StaticResults:
             y_axis_label="Force",
             x_range=[-0.1 * shaft_end, 1.1 * shaft_end],
         )
-        fig.xaxis.axis_label_text_font_size = "14pt"
-        fig.yaxis.axis_label_text_font_size = "14pt"
+        fig.xaxis.axis_label_text_font_size = "20pt"
+        fig.yaxis.axis_label_text_font_size = "20pt"
+        fig.axis.major_label_text_font_size = "16pt"
         fig.title.text_font_size = "14pt"
 
         fig.line("x", "y", source=source_SF, line_width=4, line_color=bokeh_colors[0])
@@ -1929,8 +2021,9 @@ class StaticResults:
             y_axis_label="Bending Moment",
             x_range=[-0.1 * shaft_end, 1.1 * shaft_end],
         )
-        fig.xaxis.axis_label_text_font_size = "14pt"
-        fig.yaxis.axis_label_text_font_size = "14pt"
+        fig.xaxis.axis_label_text_font_size = "20pt"
+        fig.yaxis.axis_label_text_font_size = "20pt"
+        fig.axis.major_label_text_font_size = "16pt"
         fig.title.text_font_size = "14pt"
 
         i = 0
@@ -1977,6 +2070,12 @@ class SummaryResults:
         shaft dataframe
     df_disks: dataframe
         disks dataframe
+    df_bearings: dataframe
+        bearings dataframe
+    brg_forces: list
+        list of reaction forces on bearings
+    nodes_pos:  list
+        list of nodes axial position
     CG: float
         rotor center of gravity
     Ip: float
@@ -1990,9 +2089,14 @@ class SummaryResults:
         Bokeh WidgetBox with the summary table plot
     """
 
-    def __init__(self, df_shaft, df_disks, CG, Ip, tag):
+    def __init__(
+        self, df_shaft, df_disks, df_bearings, nodes_pos, brg_forces, CG, Ip, tag
+    ):
         self.df_shaft = df_shaft
         self.df_disks = df_disks
+        self.df_bearings = df_bearings
+        self.brg_forces = brg_forces
+        self.nodes_pos = np.array(nodes_pos)
         self.CG = CG
         self.Ip = Ip
         self.tag = tag
@@ -2025,7 +2129,7 @@ class SummaryResults:
             beam_right_loc=self.df_shaft["nodes_pos_r"],
             material=materials,
             mass=self.df_shaft["m"],
-            inertia=self.df_shaft["Ie"],
+            inertia=self.df_shaft["Im"],
         )
 
         rotor_data = dict(
@@ -2042,14 +2146,22 @@ class SummaryResults:
         disk_data = dict(
             tags=self.df_disks["tag"],
             disk_node=self.df_disks["n"],
-            disk_pos=self.df_shaft["nodes_pos_l"].iloc[self.df_disks["n"]],
+            disk_pos=self.nodes_pos[self.df_bearings["n"]],
             disk_mass=self.df_disks["m"],
             disk_Ip=self.df_disks["Ip"],
+        )
+
+        bearing_data = dict(
+            tags=self.df_bearings["tag"],
+            brg_node=self.df_bearings["n"],
+            brg_pos=self.nodes_pos[self.df_bearings["n"]],
+            brg_force=self.brg_forces,
         )
 
         shaft_source = ColumnDataSource(shaft_data)
         rotor_source = ColumnDataSource(rotor_data)
         disk_source = ColumnDataSource(disk_data)
+        bearing_source = ColumnDataSource(bearing_data)
 
         shaft_titles = [
             "Element Tag",
@@ -2063,7 +2175,7 @@ class SummaryResults:
             "Elem. Right Location (m)",
             "Material",
             "Elem. Mass (kg)",
-            "Inertia (m4)",
+            "Inertia (kg.m²)",
         ]
 
         rotor_titles = [
@@ -2073,7 +2185,7 @@ class SummaryResults:
             "Starting Pos. (m)",
             "Total Lenght (m)",
             "C.G. Locantion (m)",
-            "Total Ip about C.L. (kg.m2)",
+            "Total Ip about C.L. (kg.m²)",
         ]
 
         disk_titles = [
@@ -2081,7 +2193,14 @@ class SummaryResults:
             "Disk Station",
             "C.G. Locantion (m)",
             "Disk Mass (m)",
-            "Total Ip about C.L. (kg.m2)",
+            "Total Ip about C.L. (kg.m²)",
+        ]
+
+        bearing_titles = [
+            "Tag",
+            "Bearing Station",
+            "Bearing Locantion (m)",
+            "Static Reaction Force (N)",
         ]
 
         shaft_formatters = [
@@ -2096,7 +2215,7 @@ class SummaryResults:
             NumberFormatter(format="0.000"),
             None,
             NumberFormatter(format="0.000"),
-            None,
+            NumberFormatter(format="0.0000000"),
         ]
 
         rotor_formatters = [
@@ -2113,6 +2232,13 @@ class SummaryResults:
             None,
             None,
             NumberFormatter(format="0.000"),
+            NumberFormatter(format="0.000"),
+            NumberFormatter(format="0.000"),
+        ]
+
+        bearing_formatters = [
+            None,
+            None,
             NumberFormatter(format="0.000"),
             NumberFormatter(format="0.000"),
         ]
@@ -2138,6 +2264,13 @@ class SummaryResults:
             )
         ]
 
+        bearing_columns = [
+            TableColumn(field=str(field), title=title, formatter=form)
+            for field, title, form in zip(
+                bearing_data.keys(), bearing_titles, bearing_formatters
+            )
+        ]
+
         shaft_data_table = DataTable(
             source=shaft_source, columns=shaft_columns, width=1600
         )
@@ -2146,6 +2279,9 @@ class SummaryResults:
         )
         disk_data_table = DataTable(
             source=disk_source, columns=disk_columns, width=1600
+        )
+        bearing_data_table = DataTable(
+            source=bearing_source, columns=bearing_columns, width=1600
         )
 
         rotor_table = widgetbox(rotor_data_table)
@@ -2157,7 +2293,10 @@ class SummaryResults:
         disk_table = widgetbox(disk_data_table)
         tab3 = Panel(child=disk_table, title="Disk Summary")
 
-        tabs = Tabs(tabs=[tab1, tab2, tab3])
+        bearing_table = widgetbox(bearing_data_table)
+        tab4 = Panel(child=bearing_table, title="Bearing Summary")
+
+        tabs = Tabs(tabs=[tab1, tab2, tab3, tab4])
 
         return tabs
 
@@ -2220,8 +2359,10 @@ class ConvergenceResults:
             x_axis_label="Numer of Elements",
             y_axis_label="Frequency (rad/s)",
         )
-        freq_arr.xaxis.axis_label_text_font_size = "14pt"
-        freq_arr.yaxis.axis_label_text_font_size = "14pt"
+        freq_arr.xaxis.axis_label_text_font_size = "20pt"
+        freq_arr.yaxis.axis_label_text_font_size = "20pt"
+        freq_arr.axis.major_label_text_font_size = "16pt"
+        freq_arr.title.text_font_size = "14pt"
 
         freq_arr.line("x0", "y0", source=source, line_width=3, line_color="crimson")
         freq_arr.circle("x0", "y0", source=source, size=8, fill_color="crimson")
@@ -2236,8 +2377,10 @@ class ConvergenceResults:
             x_axis_label="Number of Elements",
             y_axis_label="Relative Error (%)",
         )
-        rel_error.xaxis.axis_label_text_font_size = "14pt"
-        rel_error.yaxis.axis_label_text_font_size = "14pt"
+        rel_error.xaxis.axis_label_text_font_size = "20pt"
+        rel_error.yaxis.axis_label_text_font_size = "20pt"
+        rel_error.axis.major_label_text_font_size = "16pt"
+        rel_error.title.text_font_size = "14pt"
 
         rel_error.line(
             "x0", "y1", source=source, line_width=3, line_color="darkslategray"
@@ -2363,10 +2506,11 @@ class TimeResponseResults:
             x_axis_label="Time (s)",
             y_axis_label="Amplitude (%s)" % amp,
         )
-        bk_ax.xaxis.axis_label_text_font_size = "14pt"
-        bk_ax.yaxis.axis_label_text_font_size = "14pt"
+        bk_ax.xaxis.axis_label_text_font_size = "20pt"
+        bk_ax.yaxis.axis_label_text_font_size = "20pt"
+        bk_ax.axis.major_label_text_font_size = "16pt"
+        bk_ax.title.text_font_size = "14pt"
 
-        # bokeh plot - plot shaft centerline
         bk_ax.line(
             self.t, self.yout[:, self.dof], line_width=3, line_color=bokeh_colors[0]
         )
@@ -2400,5 +2544,170 @@ class TimeResponseResults:
             return self._plot_matplotlib(**kwargs)
         elif plot_type == "bokeh":
             return self._plot_bokeh(**kwargs)
+        else:
+            raise ValueError(f"{plot_type} is not a valid plot type.")
+
+
+class OrbitResponseResults:
+    """Class used to store results and provide plots for Orbit Response
+    Analysis.
+
+    This class takes the results from orbit response analysis and creates a
+    plot (2D or 3D) given a force array and a time array.
+
+    Parameters
+    ----------
+    t: array
+        Time values for the output.
+    yout: array
+        System response.
+    xout: array
+        Time evolution of the state vector.
+    nodes_list: array
+        list with nodes from a rotor model
+    nodes_pos: array
+        Rotor nodes axial positions
+
+    Returns
+    -------
+    ax : matplotlib.axes
+        Matplotlib axes with orbit response plot.
+        if plot_type == "3d"
+    bk_ax : bokeh axes
+        Bokeh axes with orbit response plot
+        if plot_type == "2d"
+    """
+
+    def __init__(self, t, yout, xout, nodes_list, nodes_pos):
+        self.t = t
+        self.yout = yout
+        self.xout = xout
+        self.nodes_pos = nodes_pos
+        self.nodes_list = nodes_list
+
+    def _plot3d(self, fig=None, ax=None):
+        """Plot orbit response.
+
+        This function will take a rotor object and plot its orbit response
+        using Matplotlib
+
+        Parameters
+        ----------
+        fig : matplotlib figure
+            The figure object with the plot.
+            if None, creates a new one
+        ax : matplotlib.axes
+            Matplotlib axes where orbit response will be plotted.
+            if None, creates a new one
+
+        Returns
+        -------
+        ax : matplotlib.axes
+            Matplotlib axes with orbit response plot.
+        """
+        if ax is None:
+            from mpl_toolkits.mplot3d import Axes3D
+            fig = plt.figure()
+            ax = fig.gca(projection="3d")
+
+        for n in self.nodes_list:
+            z_pos = np.ones(self.yout.shape[0]) * self.nodes_pos[n]
+            ax.plot(
+                    self.yout[200:, 4 * n],
+                    self.yout[200:, 4 * n + 1],
+                    z_pos[200:],
+                    zdir="x",
+                    color="k"
+            )
+
+        # plot center line
+        line = np.zeros(len(self.nodes_pos))
+        ax.plot(line, line, self.nodes_pos, "k-.", linewidth=1.5, zdir="x")
+
+        ax.set_xlabel("Rotor length (m)", labelpad=20, fontsize=18)
+        ax.set_ylabel("Amplitude - X direction (m)", labelpad=20, fontsize=18)
+        ax.set_zlabel("Amplitude - Y direction (m)", labelpad=20, fontsize=18)
+        ax.set_title("Rotor Orbits", fontsize=18)
+        ax.tick_params(axis='both', which='major', labelsize=18)
+        ax.tick_params(axis='both', which='minor', labelsize=18)
+
+        return ax
+
+    def _plot2d(self, node):
+        """Plot orbit response.
+
+        This function will take a rotor object and plot its orbit response
+        using Bokeh
+
+        Parameters
+        ----------
+        node: int, optional
+            Selected node to plot orbit.
+
+        Returns
+        -------
+        bk_ax : bokeh axes
+            Bokeh axes with orbit response plot
+            if plot_type == "bokeh"
+        """
+        # bokeh plot - create a new plot
+        bk_ax = figure(
+            tools="pan, box_zoom, wheel_zoom, reset, save",
+            width=640,
+            height=480,
+            title="Response for node %s" % (node),
+            x_axis_label="Amplitude - X direction (m)",
+            y_axis_label="Amplitude - Y direction (m)"
+        )
+        bk_ax.xaxis.axis_label_text_font_size = "20pt"
+        bk_ax.yaxis.axis_label_text_font_size = "20pt"
+        bk_ax.title.text_font_size = "14pt"
+
+        bk_ax.line(
+            self.yout[:, 4 * node],
+            self.yout[:, 4 * node + 1],
+            line_width=3,
+            line_color=bokeh_colors[0],
+        )
+
+        return bk_ax
+
+    def plot(self, plot_type="3d", node=None, **kwargs):
+        """Plot orbit response.
+
+        This function will take a rotor object and plot its orbit response
+
+        Parameters
+        ----------
+        plot_type: str
+            3d or 2d.
+            Choose between plotting orbit for all nodes (3d plot) and
+            plotting orbit for a single node (2d plot).
+            Default is 3d.
+        node: int, optional
+            Selected node to plot orbit.
+            Fill this attribute only when selection plot_type = "2d".
+            Detault is None
+        kwargs : optional
+            Additional key word arguments can be passed to change
+            the plot (e.g. linestyle='--')
+
+        Returns
+        -------
+        ax : matplotlib.axes
+            Matplotlib axes with time response plot.
+            if plot_type == "3d"
+        bk_ax : bokeh axes
+            Bokeh axes with time response plot
+            if plot_type == "2d"
+        """
+        if plot_type == "3d":
+            return self._plot3d(**kwargs)
+        elif plot_type == "2d":
+            if node is None:
+                raise Exception("Select a node to plot orbit when plotting 2D")
+            elif node not in self.nodes_list:
+                raise Exception("Select a valid node to plot 2D orbit")
+            return self._plot2d(node=node, **kwargs)
         else:
             raise ValueError(f"{plot_type} is not a valid plot type.")
