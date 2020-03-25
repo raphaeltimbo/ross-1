@@ -46,7 +46,6 @@ REQUIRED = [
     "toml",
     "pandas>=0.23",
     "bokeh",
-    "coverage",
     "xlrd",
     "pint",
 ]
@@ -63,6 +62,8 @@ EXTRAS = {
         "nbsphinx",
         "numpydoc",
         "sphinxcontrib-bibtex",
+        "black",
+        "isort",
     ]
 }
 
@@ -138,6 +139,7 @@ setup(
     # },
     install_requires=REQUIRED,
     extras_require=EXTRAS,
+    package_data={"": ["new_units.txt"]},
     include_package_data=True,
     license="MIT",
     classifiers=[

@@ -2,15 +2,15 @@ import os
 
 import numpy as np
 import pytest
-from numpy.testing import assert_almost_equal, assert_allclose, assert_equal
+from numpy.testing import assert_allclose, assert_almost_equal, assert_equal
 
 from ross.bearing_seal_element import *
 from ross.disk_element import *
 from ross.materials import steel
+from ross.point_mass import *
 from ross.rotor_assembly import *
 from ross.rotor_assembly import MAC_modes
 from ross.shaft_element import *
-from ross.point_mass import *
 
 test_dir = os.path.dirname(__file__)
 
@@ -23,10 +23,22 @@ def rotor1():
     o_d_ = 0.05
 
     tim0 = ShaftElement(
-        le_, i_d_, o_d_, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+        le_,
+        i_d_,
+        o_d_,
+        material=steel,
+        shear_effects=True,
+        rotary_inertia=True,
+        gyroscopic=True,
     )
     tim1 = ShaftElement(
-        le_, i_d_, o_d_, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+        le_,
+        i_d_,
+        o_d_,
+        material=steel,
+        shear_effects=True,
+        rotary_inertia=True,
+        gyroscopic=True,
     )
 
     shaft_elm = [tim0, tim1]
@@ -75,10 +87,22 @@ def test_raise_if_element_outside_shaft():
     o_d_ = 0.05
 
     tim0 = ShaftElement(
-        le_, i_d_, o_d_, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+        le_,
+        i_d_,
+        o_d_,
+        material=steel,
+        shear_effects=True,
+        rotary_inertia=True,
+        gyroscopic=True,
     )
     tim1 = ShaftElement(
-        le_, i_d_, o_d_, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+        le_,
+        i_d_,
+        o_d_,
+        material=steel,
+        shear_effects=True,
+        rotary_inertia=True,
+        gyroscopic=True,
     )
 
     shaft_elm = [tim0, tim1]
@@ -105,10 +129,22 @@ def rotor2():
     o_d_ = 0.05
 
     tim0 = ShaftElement(
-        le_, i_d_, o_d_, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+        le_,
+        i_d_,
+        o_d_,
+        material=steel,
+        shear_effects=True,
+        rotary_inertia=True,
+        gyroscopic=True,
     )
     tim1 = ShaftElement(
-        le_, i_d_, o_d_, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+        le_,
+        i_d_,
+        o_d_,
+        material=steel,
+        shear_effects=True,
+        rotary_inertia=True,
+        gyroscopic=True,
     )
 
     shaft_elm = [tim0, tim1]
@@ -262,7 +298,13 @@ def rotor3():
 
     shaft_elem = [
         ShaftElement(
-            l, i_d, o_d, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+            l,
+            i_d,
+            o_d,
+            material=steel,
+            shear_effects=True,
+            rotary_inertia=True,
+            gyroscopic=True,
         )
         for l in L
     ]
@@ -289,7 +331,13 @@ def rotor3_odd():
 
     shaft_elem = [
         ShaftElement(
-            l, i_d, o_d, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+            l,
+            i_d,
+            o_d,
+            material=steel,
+            shear_effects=True,
+            rotary_inertia=True,
+            gyroscopic=True,
         )
         for l in L
     ]
@@ -723,8 +771,8 @@ def test_static_analysis_rotor3(rotor3):
     rotor3.run_static()
 
     assert_almost_equal(
-        rotor3.disp_y,
-        (
+        rotor3.disp_y[0],
+        np.array(
             [
                 -4.94274533e-12,
                 -4.51249085e-04,
@@ -738,25 +786,27 @@ def test_static_analysis_rotor3(rotor3):
         decimal=6,
     )
     assert_almost_equal(
-        rotor3.Vx,
-        [
-            0,
-            -494.2745,
-            -456.6791,
-            -419.0836,
-            -99.4925,
-            -61.8971,
-            -24.3016,
-            480.9807,
-            518.5762,
-            556.1716,
-            0,
-        ],
+        rotor3.Vx[0],
+        np.array(
+            [
+                0,
+                -494.2745,
+                -456.6791,
+                -419.0836,
+                -99.4925,
+                -61.8971,
+                -24.3016,
+                480.9807,
+                518.5762,
+                556.1716,
+                0,
+            ]
+        ),
         decimal=3,
     )
     assert_almost_equal(
-        rotor3.Bm,
-        [0, -118.8692, -228.3395, -248.5132, -259.2881, -134.3434, 0],
+        rotor3.Bm[0],
+        np.array([0, -118.8692, -228.3395, -248.5132, -259.2881, -134.3434, 0],),
         decimal=3,
     )
 
@@ -771,7 +821,13 @@ def rotor5():
 
     shaft_elem = [
         ShaftElement(
-            l, i_d, o_d, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+            l,
+            i_d,
+            o_d,
+            material=steel,
+            shear_effects=True,
+            rotary_inertia=True,
+            gyroscopic=True,
         )
         for l in L
     ]
@@ -791,8 +847,8 @@ def test_static_analysis_rotor5(rotor5):
     rotor5.run_static()
 
     assert_almost_equal(
-        rotor5.disp_y,
-        (
+        rotor5.disp_y[0],
+        np.array(
             [
                 8.12651626e-04,
                 4.08939282e-04,
@@ -810,41 +866,45 @@ def test_static_analysis_rotor5(rotor5):
         decimal=6,
     )
     assert_almost_equal(
-        rotor5.Vx,
-        [
-            0,
-            37.5954,
-            75.1908,
-            -494.2745,
-            -456.6791,
-            -419.08368,
-            -99.4925,
-            -61.8971,
-            -24.3016,
-            480.9807,
-            518.5762,
-            556.1716,
-            -75.1908,
-            -37.5954,
-            0,
-        ],
+        rotor5.Vx[0],
+        np.array(
+            [
+                0,
+                37.5954,
+                75.1908,
+                -494.2745,
+                -456.6791,
+                -419.08368,
+                -99.4925,
+                -61.8971,
+                -24.3016,
+                480.9807,
+                518.5762,
+                556.1716,
+                -75.1908,
+                -37.5954,
+                0,
+            ]
+        ),
         decimal=3,
     )
     assert_almost_equal(
-        rotor5.Bm,
-        [
-            0,
-            4.6994,
-            18.7977,
-            -100.0714,
-            -209.5418,
-            -229.7155,
-            -240.4903,
-            -115.5457,
-            18.7977,
-            4.6994,
-            0,
-        ],
+        rotor5.Bm[0],
+        np.array(
+            [
+                0,
+                4.6994,
+                18.7977,
+                -100.0714,
+                -209.5418,
+                -229.7155,
+                -240.4903,
+                -115.5457,
+                18.7977,
+                4.6994,
+                0,
+            ]
+        ),
         decimal=3,
     )
 
@@ -860,7 +920,13 @@ def rotor6():
 
     shaft_elem = [
         ShaftElement(
-            l, i_d, o_d, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+            l,
+            i_d,
+            o_d,
+            material=steel,
+            shear_effects=True,
+            rotary_inertia=True,
+            gyroscopic=True,
         )
         for l in L
     ]
@@ -880,8 +946,8 @@ def test_static_analysis_rotor6(rotor6):
     rotor6.run_static()
 
     assert_almost_equal(
-        rotor6.disp_y,
-        (
+        rotor6.disp_y[0],
+        np.array(
             [
                 -1.03951876e-04,
                 -4.93624668e-05,
@@ -899,41 +965,45 @@ def test_static_analysis_rotor6(rotor6):
         decimal=6,
     )
     assert_almost_equal(
-        rotor6.Vx,
-        [
-            0,
-            37.5954,
-            75.1908,
-            -104.1543,
-            -66.5589,
-            -28.9635,
-            8.6319,
-            328.2230,
-            365.8184,
-            403.4139,
-            441.0093,
-            -580.4733,
-            -542.8778,
-            -505.2824,
-            0,
-        ],
+        rotor6.Vx[0],
+        np.array(
+            [
+                0,
+                37.5954,
+                75.1908,
+                -104.1543,
+                -66.5589,
+                -28.9635,
+                8.6319,
+                328.2230,
+                365.8184,
+                403.4139,
+                441.0093,
+                -580.4733,
+                -542.8778,
+                -505.2824,
+                0,
+            ]
+        ),
         decimal=3,
     )
     assert_almost_equal(
-        rotor6.Bm,
-        [
-            0,
-            4.6994,
-            18.7977,
-            -2.5414,
-            -14.4817,
-            -17.0232,
-            69.7319,
-            165.8860,
-            271.4389,
-            131.0200,
-            0,
-        ],
+        rotor6.Bm[0],
+        np.array(
+            [
+                0,
+                4.6994,
+                18.7977,
+                -2.5414,
+                -14.4817,
+                -17.0232,
+                69.7319,
+                165.8860,
+                271.4389,
+                131.0200,
+                0,
+            ]
+        ),
         decimal=3,
     )
 
@@ -941,7 +1011,7 @@ def test_static_analysis_rotor6(rotor6):
 @pytest.fixture
 def coaxrotor():
     #  Co-axial rotor system with 2 shafts, 4 disks and
-    #  4 bearings (3 to ground and 1 to body) 
+    #  4 bearings (3 to ground and 1 to body)
     i_d = 0
     o_d = 0.05
     n = 10
@@ -1062,7 +1132,9 @@ def test_from_section():
             brg_seal_data=brg_seal_data,
             nel_r=4,
         )
-    assert "The lists size do not match (leng_data, odl_data and idl_data)." == str(excinfo.value)
+    assert "The lists size do not match (leng_data, odl_data and idl_data)." == str(
+        excinfo.value
+    )
 
     with pytest.raises(ValueError) as excinfo:
         Rotor.from_section(
@@ -1075,7 +1147,9 @@ def test_from_section():
             brg_seal_data=brg_seal_data,
             nel_r=4,
         )
-    assert "The lists size do not match (leng_data, odr_data and idr_data)." == str(excinfo.value)
+    assert "The lists size do not match (leng_data, odr_data and idr_data)." == str(
+        excinfo.value
+    )
 
     with pytest.raises(AttributeError) as excinfo:
         Rotor.from_section(
@@ -1113,7 +1187,13 @@ def rotor7():
 
     shaft_elem = [
         ShaftElement(
-            l, i_d, o_d, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+            l,
+            i_d,
+            o_d,
+            material=steel,
+            shear_effects=True,
+            rotary_inertia=True,
+            gyroscopic=True,
         )
         for l in L
     ]
@@ -1349,7 +1429,13 @@ def test_global_index():
 
     shaft_elem = [
         ShaftElement(
-            l, i_d, o_d, material=steel, shear_effects=True, rotary_inertia=True, gyroscopic=True
+            l,
+            i_d,
+            o_d,
+            material=steel,
+            shear_effects=True,
+            rotary_inertia=True,
+            gyroscopic=True,
         )
         for l in L
     ]
@@ -1372,10 +1458,10 @@ def test_global_index():
     point_mass1 = PointMass(8, m=1.0)
 
     rotor = Rotor(
-            shaft_elem,
-            [disk0, disk1],
-            [bearing0, bearing1, support0, support1],
-            [point_mass0, point_mass1]
+        shaft_elem,
+        [disk0, disk1],
+        [bearing0, bearing1, support0, support1],
+        [point_mass0, point_mass1],
     )
 
     shaft = rotor.shaft_elements
