@@ -18,7 +18,7 @@ from ross.element import Element
 from ross.fluid_flow import fluid_flow as flow
 from ross.fluid_flow.fluid_flow_coefficients import (
     calculate_short_damping_matrix, calculate_short_stiffness_matrix)
-from ross.units import check_units
+from ross.units import Q, check_units, u
 from ross.utils import read_table_file
 
 # fmt: on
@@ -62,9 +62,13 @@ class _Coefficient:
     """
 
     def __init__(self, coefficient, frequency=None):
-        if isinstance(coefficient, (int, float)):
+        try:
+            len(coefficient)
+        except TypeError:
             if frequency is not None and type(frequency) != float:
-                coefficient = [coefficient for _ in range(len(frequency))]
+                coefficient = Q(
+                    [coefficient.value for _ in range(len(frequency))], coefficient.unit
+                )
             else:
                 coefficient = [coefficient]
 
@@ -117,7 +121,7 @@ class _Coefficient:
         >>> bearing1.kxx == bearing2.kxx
         True
         """
-        if np.allclose(self.__dict__["coefficient"], other.__dict__["coefficient"]):
+        if u.allclose(self.__dict__["coefficient"], other.__dict__["coefficient"]):
             return True
         else:
             return False
@@ -372,11 +376,11 @@ class BearingElement(Element):
         kxx,
         cxx,
         kyy=None,
-        kxy=0,
-        kyx=0,
+        kxy=Q(0, "N/m"),
+        kyx=Q(0, "N/m"),
         cyy=None,
-        cxy=0,
-        cyx=0,
+        cxy=Q(0, "N s/m"),
+        cyx=Q(0, "N s/m"),
         frequency=None,
         tag=None,
         n_link=None,
@@ -429,10 +433,7 @@ class BearingElement(Element):
         self.n_link = n_link
         self.n_l = n
         self.n_r = n
-        if frequency is not None:
-            self.frequency = np.array(frequency, dtype=np.float64)
-        else:
-            self.frequency = frequency
+        self.frequency = frequency
         self.tag = tag
         self.color = color
         self.scale_factor = scale_factor
@@ -498,8 +499,7 @@ class BearingElement(Element):
         if isinstance(other, self.__class__):
             return all(
                 (
-                    np.array(getattr(self, attr)).all()
-                    == np.array(getattr(other, attr)).all()
+                    np.array((getattr(self, attr) == getattr(other, attr))).all()
                     for attr in compared_attributes
                 )
             )
@@ -516,20 +516,20 @@ class BearingElement(Element):
 
         args = {
             "n": self.n,
-            "kxx": [float(i) for i in self.kxx.coefficient],
-            "cxx": [float(i) for i in self.cxx.coefficient],
-            "kyy": [float(i) for i in self.kyy.coefficient],
-            "kxy": [float(i) for i in self.kxy.coefficient],
-            "kyx": [float(i) for i in self.kyx.coefficient],
-            "cyy": [float(i) for i in self.cyy.coefficient],
-            "cxy": [float(i) for i in self.cxy.coefficient],
-            "cyx": [float(i) for i in self.cyx.coefficient],
+            "kxx": [i.value for i in self.kxx],
+            "cxx": [i.value for i in self.cxx],
+            "kyy": [i.value for i in self.kyy],
+            "kxy": [i.value for i in self.kxy],
+            "kyx": [i.value for i in self.kyx],
+            "cyy": [i.value for i in self.cyy],
+            "cxy": [i.value for i in self.cxy],
+            "cyx": [i.value for i in self.cyx],
             "tag": self.tag,
             "n_link": self.n_link,
             "scale_factor": self.scale_factor,
         }
         if self.frequency is not None:
-            args["frequency"] = [float(i) for i in self.frequency]
+            args["frequency"] = [i.value for i in self.frequency]
         else:
             args["frequency"] = self.frequency
 
@@ -1746,22 +1746,22 @@ class BearingElement6DoF(BearingElement):
 
         args = {
             "n": self.n,
-            "kxx": [float(i) for i in self.kxx.coefficient],
-            "cxx": [float(i) for i in self.cxx.coefficient],
-            "kyy": [float(i) for i in self.kyy.coefficient],
-            "kxy": [float(i) for i in self.kxy.coefficient],
-            "kyx": [float(i) for i in self.kyx.coefficient],
-            "kzz": [float(i) for i in self.kzz.coefficient],
-            "cyy": [float(i) for i in self.cyy.coefficient],
-            "cxy": [float(i) for i in self.cxy.coefficient],
-            "cyx": [float(i) for i in self.cyx.coefficient],
-            "czz": [float(i) for i in self.czz.coefficient],
+            "kxx": [i.value for i in self.kxx],
+            "cxx": [i.value for i in self.cxx],
+            "kyy": [i.value for i in self.kyy],
+            "kxy": [i.value for i in self.kxy],
+            "kyx": [i.value for i in self.kyx],
+            "kzz": [i.value for i in self.kzz],
+            "cyy": [i.value for i in self.cyy],
+            "cxy": [i.value for i in self.cxy],
+            "cyx": [i.value for i in self.cyx],
+            "czz": [i.value for i in self.czz],
             "tag": self.tag,
             "n_link": self.n_link,
             "scale_factor": self.scale_factor,
         }
         if self.frequency is not None:
-            args["frequency"] = [float(i) for i in self.frequency]
+            args["frequency"] = [i.value for i in self.frequency]
         else:
             args["frequency"] = self.frequency
 

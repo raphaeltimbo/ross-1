@@ -218,8 +218,8 @@ def test_from_table():
 
     bearing = BearingElement.from_table(0, bearing_file)
     assert bearing.n == 0
-    assert_allclose(bearing.frequency[2], 523.5987755985)
-    assert_allclose(bearing.kxx.coefficient[2], 53565700)
+    assert_allclose(bearing.frequency[2].value, 523.5987755985)
+    assert_allclose(bearing.kxx.coefficient[2].value, 53565700)
 
     # bearing with us units
     bearing_file = (
@@ -227,8 +227,8 @@ def test_from_table():
     )
     bearing = BearingElement.from_table(0, bearing_file)
     assert bearing.n == 0
-    assert_allclose(bearing.frequency[2], 523.5987755985)
-    assert_allclose(bearing.kxx.coefficient[2], 53565700)
+    assert_allclose(bearing.frequency[2].value, 523.5987755985)
+    assert_allclose(bearing.kxx.coefficient[2].value, 53565700)
 
 
 def test_bearing_link_matrices():
