@@ -7,6 +7,7 @@ There're 2 options, an element with 4 or 6 degrees of freedom.
 import os
 from pathlib import Path
 
+import astropy.units as u
 import numpy as np
 import plotly.graph_objects as go
 import toml
@@ -56,9 +57,9 @@ class DiskElement(Element):
         self.n_l = n
         self.n_r = n
 
-        self.m = float(m)
-        self.Id = float(Id)
-        self.Ip = float(Ip)
+        self.m = m
+        self.Id = Id
+        self.Ip = Ip
         self.tag = tag
         self.color = color
         self.scale_factor = scale_factor
@@ -172,8 +173,8 @@ class DiskElement(Element):
                [ 0.        ,  0.        ,  0.17808928,  0.        ],
                [ 0.        ,  0.        ,  0.        ,  0.17808928]])
         """
-        m = self.m
-        Id = self.Id
+        m = self.m.value
+        Id = self.Id.value
         # fmt: off
         M = np.array([[m, 0,  0,  0],
                       [0, m,  0,  0],
@@ -250,7 +251,7 @@ class DiskElement(Element):
                [ 0.        ,  0.        ,  0.        ,  0.32956362],
                [ 0.        ,  0.        , -0.32956362,  0.        ]])
         """
-        Ip = self.Ip
+        Ip = self.Ip.value
         # fmt: off
         G = np.array([[0, 0,   0,  0],
                       [0, 0,   0,  0],
@@ -559,9 +560,9 @@ class DiskElement6DoF(DiskElement):
                [ 0.  ,  0.  ,  0.  ,  0.  ,  0.18,  0.  ],
                [ 0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.33]])
         """
-        m = self.m
-        Id = self.Id
-        Ip = self.Ip
+        m = self.m.value
+        Id = self.Id.value
+        Ip = self.Ip.value
         # fmt: off
         M = np.array([
             [m,  0,  0,  0,  0,  0],
@@ -654,7 +655,7 @@ class DiskElement6DoF(DiskElement):
                [ 0.  ,  0.  ,  0.  , -0.33,  0.  ,  0.  ],
                [ 0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ]])
         """
-        Ip = self.Ip
+        Ip = self.Ip.value
         # fmt: off
         G = np.array([
             [0, 0, 0,   0,  0, 0],
