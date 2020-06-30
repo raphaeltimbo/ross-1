@@ -78,9 +78,9 @@ def test_from_table():
         file_name = os.path.dirname(os.path.realpath(__file__)) + file_name
         disks = DiskElement.from_table(file_name, sheet_name="More")
 
-        assert_allclose(disks[1].m, 6.90999178227835)
-        assert_allclose(disks[1].Ip, 0.0469996988106328, atol=1.6e-07)
-        assert_allclose(disks[1].Id, 0.0249998397928898, atol=1.6e-07)
+        assert_allclose(disks[1].m.value, 6.90999178227835)
+        assert_allclose(disks[1].Ip.value, 0.0469996988106328, atol=1.6e-07)
+        assert_allclose(disks[1].Id.value, 0.0249998397928898, atol=1.6e-07)
 
 
 @pytest.fixture
@@ -160,6 +160,6 @@ def test_from_table_6dof():
         file_name = os.path.dirname(os.path.realpath(__file__)) + file_name
         disks = DiskElement6DoF.from_table(file_name, sheet_name="More")
 
-        assert_allclose(disks[1].m, 6.90999178227835)
-        assert_allclose(disks[1].Ip, 0.0469996988106328, atol=1.6e-07)
-        assert_allclose(disks[1].Id, 0.0249998397928898, atol=1.6e-07)
+        assert_allclose(disks[1].m.value, 6.90999178227835)
+        assert_allclose(disks[1].Ip.value, 0.0469996988106328, atol=1.6e-07)
+        assert_allclose(disks[1].Id.value, 0.0249998397928898, atol=1.6e-07)
