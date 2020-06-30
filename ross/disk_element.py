@@ -88,7 +88,7 @@ class DiskElement(Element):
         false_number = 0
         for i in self.__dict__:
             try:
-                if np.allclose(self.__dict__[i], other.__dict__[i]):
+                if u.allclose(self.__dict__[i], other.__dict__[i]):
                     pass
                 else:
                     false_number += 1
