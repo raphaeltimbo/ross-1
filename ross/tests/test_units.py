@@ -1,399 +1,682 @@
 import pytest
 from numpy.testing import assert_allclose
 
-from ross.units import Q_, check_units, units
+from ross.units import Q, check_units, units
 
 
 def test_new_units_loaded():
-    speed = Q_(1, "RPM")
-    assert speed.magnitude == 1
+    speed = Q(1, "RPM")
+    assert speed.value == 1
+    assert speed.si.value == 0.104719755
+    assert str(speed.si.unit) == "rad / s"
 
 
 @pytest.fixture
 def auxiliary_function():
-    # fmt: off
     @check_units
-    def func(E, G_s, rho, L, idl, idr, odl, odr, speed, frequency, m, mx, my, Ip, Id,
-             width, i_d, o_d, kxx, kxy, kxz, kyx, kyy, kyz, kzx, kzy, kzz, cxx, cxy,
-             cxz, cyx, cyy, cyz, czx, czy, czz):
+    def func(
+        E,
+        G_s,
+        rho,
+        L,
+        idl,
+        idr,
+        odl,
+        odr,
+        speed,
+        frequency,
+        m,
+        mx,
+        my,
+        Ip,
+        Id,
+        width,
+        i_d,
+        o_d,
+        kxx,
+        kxy,
+        kxz,
+        kyx,
+        kyy,
+        kyz,
+        kzx,
+        kzy,
+        kzz,
+        cxx,
+        cxy,
+        cxz,
+        cyx,
+        cyy,
+        cyz,
+        czx,
+        czy,
+        czz,
+        Poisson,
+    ):
         return (
-            E, G_s, rho, L, idl, idr, odl, odr, speed, frequency, m, mx, my, Ip, Id,
-            width, i_d, o_d, kxx, kxy, kxz, kyx, kyy, kyz, kzx, kzy, kzz, cxx, cxy,
-            cxz, cyx, cyy, cyz, czx, czy, czz
+            E,
+            G_s,
+            rho,
+            L,
+            idl,
+            idr,
+            odl,
+            odr,
+            speed,
+            frequency,
+            m,
+            mx,
+            my,
+            Ip,
+            Id,
+            width,
+            i_d,
+            o_d,
+            kxx,
+            kxy,
+            kxz,
+            kyx,
+            kyy,
+            kyz,
+            kzx,
+            kzy,
+            kzz,
+            cxx,
+            cxy,
+            cxz,
+            cyx,
+            cyy,
+            cyz,
+            czx,
+            czy,
+            czz,
+            Poisson,
         )
-    # fmt: on
+
     return func
 
 
 def test_units(auxiliary_function):
-    # fmt: off
     results = auxiliary_function(
-        E=1, G_s=1, rho=1, L=1, idl=1, idr=1, odl=1, odr=1, speed=1, frequency=1,
-        m=1, mx=1, my=1, Ip=1, Id=1, width=1, i_d=1, o_d=1, kxx=1, kxy=1, kxz=1, kyx=1,
-        kyy=1, kyz=1, kzx=1, kzy=1, kzz=1, cxx=1, cxy=1, cxz=1, cyx=1, cyy=1, cyz=1,
-        czx=1, czy=1, czz=1,
+        E=1,
+        G_s=1,
+        rho=1,
+        L=1,
+        idl=1,
+        idr=1,
+        odl=1,
+        odr=1,
+        speed=1,
+        frequency=1,
+        m=1,
+        mx=1,
+        my=1,
+        Ip=1,
+        Id=1,
+        width=1,
+        i_d=1,
+        o_d=1,
+        kxx=1,
+        kxy=1,
+        kxz=1,
+        kyx=1,
+        kyy=1,
+        kyz=1,
+        kzx=1,
+        kzy=1,
+        kzz=1,
+        cxx=1,
+        cxy=1,
+        cxz=1,
+        cyx=1,
+        cyy=1,
+        cyz=1,
+        czx=1,
+        czy=1,
+        czz=1,
+        Poisson=1,
     )
     # check if all available units are tested
     assert len(results) == len(units)
 
-    (E, G_s, rho, L, idl, idr, odl, odr, speed, frequency, m, mx, my, Ip, Id,
-     width, i_d, o_d, kxx, kxy, kxz, kyx, kyy, kyz, kzx, kzy, kzz, cxx, cxy,
-     cxz, cyx, cyy, cyz, czx, czy, czz) = results
-    # fmt: on
+    (
+        E,
+        G_s,
+        rho,
+        L,
+        idl,
+        idr,
+        odl,
+        odr,
+        speed,
+        frequency,
+        m,
+        mx,
+        my,
+        Ip,
+        Id,
+        width,
+        i_d,
+        o_d,
+        kxx,
+        kxy,
+        kxz,
+        kyx,
+        kyy,
+        kyz,
+        kzx,
+        kzy,
+        kzz,
+        cxx,
+        cxy,
+        cxz,
+        cyx,
+        cyy,
+        cyz,
+        czx,
+        czy,
+        czz,
+        Poisson,
+    ) = results
 
-    assert E == 1
-    assert G_s == 1
-    assert rho == 1
-    assert L == 1
-    assert idl == 1
-    assert idr == 1
-    assert odl == 1
-    assert odr == 1
-    assert speed == 1
-    assert frequency == 1
-    assert m == 1
-    assert mx == 1
-    assert my == 1
-    assert Ip == 1
-    assert Id == 1
-    assert width == 1
-    assert i_d == 1
-    assert o_d == 1
-    assert kxx == 1
-    assert kxy == 1
-    assert kxz == 1
-    assert kyx == 1
-    assert kyy == 1
-    assert kyz == 1
-    assert kzx == 1
-    assert kzy == 1
-    assert kzz == 1
-    assert cxx == 1
-    assert cxy == 1
-    assert cxz == 1
-    assert cyx == 1
-    assert cyy == 1
-    assert cyz == 1
-    assert czx == 1
-    assert czy == 1
-    assert czz == 1
+    assert E.value == 1
+    assert E.unit == "N / m2"
+
+    assert G_s.value == 1
+    assert G_s.unit == "N / m2"
+
+    assert rho.value == 1
+    assert rho.unit == "kilogram / m3"
+
+    assert L.value == 1
+    assert L.unit == "meter"
+
+    assert idl.value == 1
+    assert idl.unit == "meter"
+
+    assert idr.value == 1
+    assert idr.unit == "meter"
+
+    assert odl.value == 1
+    assert odl.unit == "meter"
+
+    assert odr.value == 1
+    assert odr.unit == "meter"
+
+    assert speed.value == 1
+    assert speed.unit == "radian/second"
+
+    assert frequency.value == 1
+    assert frequency.unit == "radian/second"
+
+    assert m.value == 1
+    assert m.unit == "kg"
+
+    assert mx.value == 1
+    assert mx.unit == "kg"
+
+    assert my.value == 1
+    assert my.unit == "kg"
+
+    assert Ip.value == 1
+    assert Ip.unit == "kg m2"
+
+    assert Id.value == 1
+    assert Id.unit == "kg m2"
+
+    assert width.value == 1
+    assert width.unit == "m"
+
+    assert i_d.value == 1
+    assert i_d.unit == "m"
+
+    assert o_d.value == 1
+    assert o_d.unit == "m"
+
+    assert kxx.value == 1
+    assert kxx.unit == "N / m"
+
+    assert kxy.value == 1
+    assert kxy.unit == "N / m"
+
+    assert kxz.value == 1
+    assert kxz.unit == "N / m"
+
+    assert kyx.value == 1
+    assert kyx.unit == "N / m"
+
+    assert kyy.value == 1
+    assert kyy.unit == "N / m"
+
+    assert kyz.value == 1
+    assert kyz.unit == "N / m"
+
+    assert kzx.value == 1
+    assert kzx.unit == "N / m"
+
+    assert kzy.value == 1
+    assert kzy.unit == "N / m"
+
+    assert kzz.value == 1
+    assert kzz.unit == "N / m"
+
+    assert cxx.value == 1
+    assert cxx.unit == "N s / m"
+
+    assert cxy.value == 1
+    assert cxy.unit == "N s / m"
+
+    assert cxz.value == 1
+    assert cxz.unit == "N s / m"
+
+    assert cyx.value == 1
+    assert cyx.unit == "N s / m"
+
+    assert cyy.value == 1
+    assert cyy.unit == "N s / m"
+
+    assert cyz.value == 1
+    assert cyz.unit == "N s / m"
+
+    assert czx.value == 1
+    assert czx.unit == "N s / m"
+
+    assert czy.value == 1
+    assert czy.unit == "N s / m"
+
+    assert czz.value == 1
+    assert czz.unit == "N s / m"
+
+    assert Poisson.value == 1.0
+    assert Poisson.unit == ""
 
 
-def test_unit_Q_(auxiliary_function):
+def test_unit_Q_input(auxiliary_function):
     results = auxiliary_function(
-        E=Q_(1, "N/m**2"),
-        G_s=Q_(1, "N/m**2"),
-        rho=Q_(1, "kg/m**3"),
-        L=Q_(1, "meter"),
-        idl=Q_(1, "meter"),
-        idr=Q_(1, "meter"),
-        odl=Q_(1, "meter"),
-        odr=Q_(1, "meter"),
-        speed=Q_(1, "radian/second"),
-        frequency=Q_(1, "radian/second"),
-        m=Q_(1, "kg"),
-        mx=Q_(1, "kg"),
-        my=Q_(1, "kg"),
-        Ip=Q_(1, "kg*m**2"),
-        Id=Q_(1, "kg*m**2"),
-        width=Q_(1, "meter"),
-        i_d=Q_(1, "meter"),
-        o_d=Q_(1, "meter"),
-        kxx=Q_(1, "N/m"),
-        kxy=Q_(1, "N/m"),
-        kxz=Q_(1, "N/m"),
-        kyx=Q_(1, "N/m"),
-        kyy=Q_(1, "N/m"),
-        kyz=Q_(1, "N/m"),
-        kzx=Q_(1, "N/m"),
-        kzy=Q_(1, "N/m"),
-        kzz=Q_(1, "N/m"),
-        cxx=Q_(1, "N*s/m"),
-        cxy=Q_(1, "N*s/m"),
-        cxz=Q_(1, "N*s/m"),
-        cyx=Q_(1, "N*s/m"),
-        cyy=Q_(1, "N*s/m"),
-        cyz=Q_(1, "N*s/m"),
-        czx=Q_(1, "N*s/m"),
-        czy=Q_(1, "N*s/m"),
-        czz=Q_(1, "N*s/m"),
+        E=Q(1, "N/m**2"),
+        G_s=Q(1, "N/m**2"),
+        rho=Q(1, "kg/m**3"),
+        L=Q(1, "meter"),
+        idl=Q(1, "meter"),
+        idr=Q(1, "meter"),
+        odl=Q(1, "meter"),
+        odr=Q(1, "meter"),
+        speed=Q(1, "radian/second"),
+        frequency=Q(1, "radian/second"),
+        m=Q(1, "kg"),
+        mx=Q(1, "kg"),
+        my=Q(1, "kg"),
+        Ip=Q(1, "kg*m**2"),
+        Id=Q(1, "kg*m**2"),
+        width=Q(1, "meter"),
+        i_d=Q(1, "meter"),
+        o_d=Q(1, "meter"),
+        kxx=Q(1, "N/m"),
+        kxy=Q(1, "N/m"),
+        kxz=Q(1, "N/m"),
+        kyx=Q(1, "N/m"),
+        kyy=Q(1, "N/m"),
+        kyz=Q(1, "N/m"),
+        kzx=Q(1, "N/m"),
+        kzy=Q(1, "N/m"),
+        kzz=Q(1, "N/m"),
+        cxx=Q(1, "N*s/m"),
+        cxy=Q(1, "N*s/m"),
+        cxz=Q(1, "N*s/m"),
+        cyx=Q(1, "N*s/m"),
+        cyy=Q(1, "N*s/m"),
+        cyz=Q(1, "N*s/m"),
+        czx=Q(1, "N*s/m"),
+        czy=Q(1, "N*s/m"),
+        czz=Q(1, "N*s/m"),
+        Poisson=Q(1, ""),
     )
 
     # check if all available units are tested
     assert len(results) == len(units)
-    # fmt: off
-    (E, G_s, rho, L, idl, idr, odl, odr, speed, frequency, m, mx, my, Ip, Id,
-     width, i_d, o_d, kxx, kxy, kxz, kyx, kyy, kyz, kzx, kzy, kzz, cxx, cxy,
-     cxz, cyx, cyy, cyz, czx, czy, czz) = results
-    # fmt: on
+    (
+        E,
+        G_s,
+        rho,
+        L,
+        idl,
+        idr,
+        odl,
+        odr,
+        speed,
+        frequency,
+        m,
+        mx,
+        my,
+        Ip,
+        Id,
+        width,
+        i_d,
+        o_d,
+        kxx,
+        kxy,
+        kxz,
+        kyx,
+        kyy,
+        kyz,
+        kzx,
+        kzy,
+        kzz,
+        cxx,
+        cxy,
+        cxz,
+        cyx,
+        cyy,
+        cyz,
+        czx,
+        czy,
+        czz,
+        Poisson,
+    ) = results
 
-    assert E == 1
-    assert G_s == 1
-    assert rho == 1
-    assert L == 1
-    assert idl == 1
-    assert idr == 1
-    assert odl == 1
-    assert odr == 1
-    assert speed == 1
-    assert frequency == 1
-    assert m == 1
-    assert mx == 1
-    assert my == 1
-    assert Ip == 1
-    assert Id == 1
-    assert width == 1
-    assert i_d == 1
-    assert o_d == 1
-    assert kxx == 1
-    assert kxy == 1
-    assert kxz == 1
-    assert kyx == 1
-    assert kyy == 1
-    assert kyz == 1
-    assert kzx == 1
-    assert kzy == 1
-    assert kzz == 1
-    assert cxx == 1
-    assert cxy == 1
-    assert cxz == 1
-    assert cyx == 1
-    assert cyy == 1
-    assert cyz == 1
-    assert czx == 1
-    assert czy == 1
-    assert czz == 1
+    assert E.value == 1
+    assert E.unit == "N / m2"
+
+    assert G_s.value == 1
+    assert G_s.unit == "N / m2"
+
+    assert rho.value == 1
+    assert rho.unit == "kilogram / m3"
+
+    assert L.value == 1
+    assert L.unit == "meter"
+
+    assert idl.value == 1
+    assert idl.unit == "meter"
+
+    assert idr.value == 1
+    assert idr.unit == "meter"
+
+    assert odl.value == 1
+    assert odl.unit == "meter"
+
+    assert odr.value == 1
+    assert odr.unit == "meter"
+
+    assert speed.value == 1
+    assert speed.unit == "radian/second"
+
+    assert frequency.value == 1
+    assert frequency.unit == "radian/second"
+
+    assert m.value == 1
+    assert m.unit == "kg"
+
+    assert mx.value == 1
+    assert mx.unit == "kg"
+
+    assert my.value == 1
+    assert my.unit == "kg"
+
+    assert Ip.value == 1
+    assert Ip.unit == "kg m2"
+
+    assert Id.value == 1
+    assert Id.unit == "kg m2"
+
+    assert width.value == 1
+    assert width.unit == "m"
+
+    assert i_d.value == 1
+    assert i_d.unit == "m"
+
+    assert o_d.value == 1
+    assert o_d.unit == "m"
+
+    assert kxx.value == 1
+    assert kxx.unit == "N / m"
+
+    assert kxy.value == 1
+    assert kxy.unit == "N / m"
+
+    assert kxz.value == 1
+    assert kxz.unit == "N / m"
+
+    assert kyx.value == 1
+    assert kyx.unit == "N / m"
+
+    assert kyy.value == 1
+    assert kyy.unit == "N / m"
+
+    assert kyz.value == 1
+    assert kyz.unit == "N / m"
+
+    assert kzx.value == 1
+    assert kzx.unit == "N / m"
+
+    assert kzy.value == 1
+    assert kzy.unit == "N / m"
+
+    assert kzz.value == 1
+    assert kzz.unit == "N / m"
+
+    assert cxx.value == 1
+    assert cxx.unit == "N s / m"
+
+    assert cxy.value == 1
+    assert cxy.unit == "N s / m"
+
+    assert cxz.value == 1
+    assert cxz.unit == "N s / m"
+
+    assert cyx.value == 1
+    assert cyx.unit == "N s / m"
+
+    assert cyy.value == 1
+    assert cyy.unit == "N s / m"
+
+    assert cyz.value == 1
+    assert cyz.unit == "N s / m"
+
+    assert czx.value == 1
+    assert czx.unit == "N s / m"
+
+    assert czy.value == 1
+    assert czy.unit == "N s / m"
+
+    assert czz.value == 1
+    assert czz.unit == "N s / m"
+
+    assert Poisson.value == 1.0
+    assert Poisson.unit == ""
 
 
 def test_unit_Q_conversion(auxiliary_function):
     results = auxiliary_function(
-        E=Q_(1, "lbf/in**2"),
-        G_s=Q_(1, "lbf/in**2"),
-        rho=Q_(1, "lb/foot**3"),
-        L=Q_(1, "inches"),
-        idl=Q_(1, "inches"),
-        idr=Q_(1, "inches"),
-        odl=Q_(1, "inches"),
-        odr=Q_(1, "inches"),
-        speed=Q_(1, "RPM"),
-        frequency=Q_(1, "RPM"),
-        m=Q_(1, "lb"),
-        mx=Q_(1, "lb"),
-        my=Q_(1, "lb"),
-        Ip=Q_(1, "lb*in**2"),
-        Id=Q_(1, "lb*in**2"),
-        width=Q_(1, "inches"),
-        i_d=Q_(1, "inches"),
-        o_d=Q_(1, "inches"),
-        kxx=Q_(1, "lbf/in"),
-        kxy=Q_(1, "lbf/in"),
-        kxz=Q_(1, "lbf/in"),
-        kyx=Q_(1, "lbf/in"),
-        kyy=Q_(1, "lbf/in"),
-        kyz=Q_(1, "lbf/in"),
-        kzx=Q_(1, "lbf/in"),
-        kzy=Q_(1, "lbf/in"),
-        kzz=Q_(1, "lbf/in"),
-        cxx=Q_(1, "lbf*s/in"),
-        cxy=Q_(1, "lbf*s/in"),
-        cxz=Q_(1, "lbf*s/in"),
-        cyx=Q_(1, "lbf*s/in"),
-        cyy=Q_(1, "lbf*s/in"),
-        cyz=Q_(1, "lbf*s/in"),
-        czx=Q_(1, "lbf*s/in"),
-        czy=Q_(1, "lbf*s/in"),
-        czz=Q_(1, "lbf*s/in"),
+        E=Q(1, "lbf/in**2"),
+        G_s=Q(1, "lbf/in**2"),
+        rho=Q(1, "lb/foot**3"),
+        L=Q(1, "inches"),
+        idl=Q(1, "inches"),
+        idr=Q(1, "inches"),
+        odl=Q(1, "inches"),
+        odr=Q(1, "inches"),
+        speed=Q(1, "RPM"),
+        frequency=Q(1, "RPM"),
+        m=Q(1, "lb"),
+        mx=Q(1, "lb"),
+        my=Q(1, "lb"),
+        Ip=Q(1, "lb*in**2"),
+        Id=Q(1, "lb*in**2"),
+        width=Q(1, "inches"),
+        i_d=Q(1, "inches"),
+        o_d=Q(1, "inches"),
+        kxx=Q(1, "lbf/in"),
+        kxy=Q(1, "lbf/in"),
+        kxz=Q(1, "lbf/in"),
+        kyx=Q(1, "lbf/in"),
+        kyy=Q(1, "lbf/in"),
+        kyz=Q(1, "lbf/in"),
+        kzx=Q(1, "lbf/in"),
+        kzy=Q(1, "lbf/in"),
+        kzz=Q(1, "lbf/in"),
+        cxx=Q(1, "lbf*s/in"),
+        cxy=Q(1, "lbf*s/in"),
+        cxz=Q(1, "lbf*s/in"),
+        cyx=Q(1, "lbf*s/in"),
+        cyy=Q(1, "lbf*s/in"),
+        cyz=Q(1, "lbf*s/in"),
+        czx=Q(1, "lbf*s/in"),
+        czy=Q(1, "lbf*s/in"),
+        czz=Q(1, "lbf*s/in"),
+        Poisson=Q(1, ""),
     )
 
     # check if all available units are tested
     assert len(results) == len(units)
 
-    # fmt: off
-    (E, G_s, rho, L, idl, idr, odl, odr, speed, frequency, m, mx, my, Ip, Id,
-     width, i_d, o_d, kxx, kxy, kxz, kyx, kyy, kyz, kzx, kzy, kzz, cxx, cxy,
-     cxz, cyx, cyy, cyz, czx, czy, czz) = results
-    # fmt: on
+    (
+        E,
+        G_s,
+        rho,
+        L,
+        idl,
+        idr,
+        odl,
+        odr,
+        speed,
+        frequency,
+        m,
+        mx,
+        my,
+        Ip,
+        Id,
+        width,
+        i_d,
+        o_d,
+        kxx,
+        kxy,
+        kxz,
+        kyx,
+        kyy,
+        kyz,
+        kzx,
+        kzy,
+        kzz,
+        cxx,
+        cxy,
+        cxz,
+        cyx,
+        cyy,
+        cyz,
+        czx,
+        czy,
+        czz,
+        Poisson,
+    ) = results
 
-    assert E == 6894.7572931683635
-    assert G_s == 6894.7572931683635
-    assert_allclose(rho, 16.01846337396014)
-    assert L == 0.0254
-    assert idl == 0.0254
-    assert idr == 0.0254
-    assert odl == 0.0254
-    assert odr == 0.0254
-    assert speed == 0.10471975511965977
-    assert frequency == 0.10471975511965977
-    assert m == 0.4535923700000001
-    assert mx == 0.4535923700000001
-    assert my == 0.4535923700000001
-    assert Ip == 0.0002926396534292
-    assert Id == 0.0002926396534292
-    assert width == 0.0254
-    assert i_d == 0.0254
-    assert o_d == 0.0254
-    assert kxx == 175.12683524647645
-    assert kxy == 175.12683524647645
-    assert kxz == 175.12683524647645
-    assert kyx == 175.12683524647645
-    assert kyy == 175.12683524647645
-    assert kyz == 175.12683524647645
-    assert kzx == 175.12683524647645
-    assert kzy == 175.12683524647645
-    assert kzz == 175.12683524647645
-    assert cxx == 175.12683524647645
-    assert cxy == 175.12683524647645
-    assert cxz == 175.12683524647645
-    assert cyx == 175.12683524647645
-    assert cyy == 175.12683524647645
-    assert cyz == 175.12683524647645
-    assert czx == 175.12683524647645
-    assert czy == 175.12683524647645
-    assert czz == 175.12683524647645
+    assert E.value == 6894.757388223366
+    assert E.unit == "N / m2"
 
+    assert G_s.value == 6894.757388223366
+    assert G_s.unit == "N / m2"
 
-# NOTE ABOUT TESTS BELOW
-# For now, we only return the magnitude for the converted Quantity
-# If pint is fully adopted by ross in the future, and we have all Quantities
-# using it, we could remove this, which would allows us to use pint in its full capability
-@pytest.mark.skip("Skip since we are not fully using pint")
-def test_units_pint(auxiliary_function):
-    results = auxiliary_function(
-        E=1, G_s=1, rho=1, L=1, idl=1, idr=1, odl=1, odr=1, speed=1, frequency=1
-    )
-    # check if all available units are tested
-    assert len(results) == len(units)
+    assert_allclose(rho.value, 16.01846337396014)
+    assert rho.unit == "kilogram / m3"
 
-    E, G_s, rho, L, idl, idr, odl, odr, speed, frequency = results
+    assert L.value == 0.025400000000000002
+    assert L.unit == "meter"
 
-    assert E.magnitude == 1
-    assert E.units == "newton/meter**2"
+    assert idl.value == 0.025400000000000002
+    assert idl.unit == "meter"
 
-    assert G_s.magnitude == 1
-    assert G_s.units == "newton/meter**2"
+    assert idr.value == 0.025400000000000002
+    assert idr.unit == "meter"
 
-    assert rho.magnitude == 1
-    assert rho.units == "kilogram/meter**3"
+    assert odl.value == 0.025400000000000002
+    assert odl.unit == "meter"
 
-    assert L.magnitude == 1
-    assert L.units == "meter"
+    assert odr.value == 0.025400000000000002
+    assert odr.unit == "meter"
 
-    assert idl.magnitude == 1
-    assert idl.units == "meter"
+    assert speed.value == 0.104719755
+    assert speed.unit == "radian/second"
 
-    assert idr.magnitude == 1
-    assert idr.units == "meter"
+    assert frequency.value == 0.104719755
+    assert frequency.unit == "radian/second"
 
-    assert odl.magnitude == 1
-    assert odl.units == "meter"
+    assert m.value == 0.45359237
+    assert m.unit == "kg"
 
-    assert odr.magnitude == 1
-    assert odr.units == "meter"
+    assert mx.value == 0.45359237
+    assert mx.unit == "kg"
 
-    assert speed.magnitude == 1
-    assert speed.units == "radian/second"
+    assert my.value == 0.45359237
+    assert my.unit == "kg"
 
-    assert frequency.magnitude == 1
-    assert frequency.units == "radian/second"
+    assert Ip.value == 0.00029263965342920005
+    assert Ip.unit == "kg m2"
 
+    assert Id.value == 0.00029263965342920005
+    assert Id.unit == "kg m2"
 
-@pytest.mark.skip("Skip since we are not fully using pint")
-def test_unit_Q__pint(auxiliary_function):
-    results = auxiliary_function(
-        E=Q_(1, "N/m**2"),
-        G_s=Q_(1, "N/m**2"),
-        rho=Q_(1, "kg/m**3"),
-        L=Q_(1, "meter"),
-        idl=Q_(1, "meter"),
-        idr=Q_(1, "meter"),
-        odl=Q_(1, "meter"),
-        odr=Q_(1, "meter"),
-        speed=Q_(1, "radian/second"),
-        frequency=Q_(1, "radian/second"),
-    )
+    assert width.value == 0.025400000000000002
+    assert width.unit == "m"
 
-    # check if all available units are tested
-    assert len(results) == len(units)
+    assert i_d.value == 0.025400000000000002
+    assert i_d.unit == "m"
 
-    E, G_s, rho, L, idl, idr, odl, odr, speed, frequency = results
+    assert o_d.value == 0.025400000000000002
+    assert o_d.unit == "m"
 
-    assert E.magnitude == 1
-    assert E.units == "newton/meter**2"
+    assert kxx.value == 175.12683766087352
+    assert kxx.unit == "N / m"
 
-    assert G_s.magnitude == 1
-    assert G_s.units == "newton/meter**2"
+    assert kxy.value == 175.12683766087352
+    assert kxy.unit == "N / m"
 
-    assert rho.magnitude == 1
-    assert rho.units == "kilogram/meter**3"
+    assert kxz.value == 175.12683766087352
+    assert kxz.unit == "N / m"
 
-    assert L.magnitude == 1
-    assert L.units == "meter"
+    assert kyx.value == 175.12683766087352
+    assert kyx.unit == "N / m"
 
-    assert idl.magnitude == 1
-    assert idl.units == "meter"
+    assert kyy.value == 175.12683766087352
+    assert kyy.unit == "N / m"
 
-    assert idr.magnitude == 1
-    assert idr.units == "meter"
+    assert kyz.value == 175.12683766087352
+    assert kyz.unit == "N / m"
 
-    assert odl.magnitude == 1
-    assert odl.units == "meter"
+    assert kzx.value == 175.12683766087352
+    assert kzx.unit == "N / m"
 
-    assert odr.magnitude == 1
-    assert odr.units == "meter"
+    assert kzy.value == 175.12683766087352
+    assert kzy.unit == "N / m"
 
-    assert speed.magnitude == 1
-    assert speed.units == "radian/second"
+    assert kzz.value == 175.12683766087352
+    assert kzz.unit == "N / m"
 
-    assert frequency.magnitude == 1
-    assert frequency.units == "radian/second"
+    assert cxx.value == 175.12683766087352
+    assert cxx.unit == "N s / m"
 
+    assert cxy.value == 175.12683766087352
+    assert cxy.unit == "N s / m"
 
-@pytest.mark.skip("Skip since we are not fully using pint")
-def test_unit_Q_conversion_pint(auxiliary_function):
-    results = auxiliary_function(
-        E=Q_(1, "lbf/in**2"),
-        G_s=Q_(1, "lbf/in**2"),
-        rho=Q_(1, "lb/foot**3"),
-        L=Q_(1, "inches"),
-        idl=Q_(1, "inches"),
-        idr=Q_(1, "inches"),
-        odl=Q_(1, "inches"),
-        odr=Q_(1, "inches"),
-        speed=Q_(1, "RPM"),
-        frequency=Q_(1, "RPM"),
-    )
+    assert cxz.value == 175.12683766087352
+    assert cxz.unit == "N s / m"
 
-    # check if all available units are tested
-    assert len(results) == len(units)
+    assert cyx.value == 175.12683766087352
+    assert cyx.unit == "N s / m"
 
-    E, G_s, rho, L, idl, idr, odl, odr, speed, frequency = results
+    assert cyy.value == 175.12683766087352
+    assert cyy.unit == "N s / m"
 
-    assert E.magnitude == 6894.7572931683635
-    assert E.units == "newton/meter**2"
+    assert cyz.value == 175.12683766087352
+    assert cyz.unit == "N s / m"
 
-    assert G_s.magnitude == 6894.7572931683635
-    assert G_s.units == "newton/meter**2"
+    assert czx.value == 175.12683766087352
+    assert czx.unit == "N s / m"
 
-    assert_allclose(rho.magnitude, 16.01846337396014)
-    assert rho.units == "kilogram/meter**3"
+    assert czy.value == 175.12683766087352
+    assert czy.unit == "N s / m"
 
-    assert L.magnitude == 0.0254
-    assert L.units == "meter"
+    assert czz.value == 175.12683766087352
+    assert czz.unit == "N s / m"
 
-    assert idl.magnitude == 0.0254
-    assert idl.units == "meter"
-
-    assert idr.magnitude == 0.0254
-    assert idr.units == "meter"
-
-    assert odl.magnitude == 0.0254
-    assert odl.units == "meter"
-
-    assert odr.magnitude == 0.0254
-    assert odr.units == "meter"
-
-    assert speed.magnitude == 0.10471975511965977
-    assert speed.units == "radian/second"
-
-    assert frequency.magnitude == 0.10471975511965977
-    assert frequency.units == "radian/second"
+    assert Poisson.value == 1.0
+    assert Poisson.unit == ""
