@@ -41,6 +41,12 @@ class Element(ABC):
         signature = inspect.signature(self.__init__)
         args_list = list(signature.parameters)
         args = {arg: getattr(self, arg) for arg in args_list}
+        for k, v in args.items():
+            # try to get only values for Quantity objects
+            try:
+                args[k] = v.value
+            except AttributeError:
+                pass
         try:
             data = toml.load(file)
         except FileNotFoundError:
