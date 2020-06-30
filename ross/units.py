@@ -1,21 +1,17 @@
 """This module deals with units conversion in the ROSS library."""
 import inspect
-import warnings
 from functools import wraps
-from pathlib import Path
 
-from pint import Quantity, UnitRegistry
+import astropy.units as u
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    Quantity([])
+Q = u.Quantity
 
-new_units_path = Path(__file__).parent / "new_units.txt"
-ureg = UnitRegistry()
-ureg.load_definitions(str(new_units_path))
-Q_ = ureg.Quantity
+__all__ = ["Q", "check_units"]
 
-__all__ = ["Q_", "check_units"]
+u.imperial.enable()
+inches = u.def_unit(["in", "inch", "inches"], 1 * u.imperial.inch)
+rpm = u.def_unit(["RPM", "rpm"], 0.104719755 * (u.rad / u.s))
+u.add_enabled_units([inches, rpm])
 
 units = {
     "E": "N/m**2",
@@ -36,6 +32,7 @@ units = {
     "width": "meter",
     "i_d": "meter",
     "o_d": "meter",
+    "Poisson": "",
 }
 for i, unit in zip(["k", "c"], ["N/m", "N*s/m"]):
     for j in ["x", "y", "z"]:
@@ -66,7 +63,7 @@ def check_units(func):
 
     If we call the function with a pint.Quantity object the value is automatically
     converted to the default:
-    >>> foo(L=Q_(0.5, 'inches'))
+    >>> foo(L=Q(0.5, 'inches'))
     0.0127
     """
 
@@ -81,9 +78,9 @@ def check_units(func):
                 # If pint is fully adopted by ross in the future, and we have all Quantities
                 # using it, we could remove this, which would allows us to use pint in its full capability
                 try:
-                    base_unit_args.append(arg_value.to(units[arg_name]).m)
+                    base_unit_args.append(arg_value.to(units[arg_name]))
                 except AttributeError:
-                    base_unit_args.append(Q_(arg_value, units[arg_name]).m)
+                    base_unit_args.append(Q(arg_value, units[arg_name]))
             else:
                 base_unit_args.append(arg_value)
 
@@ -91,9 +88,9 @@ def check_units(func):
         for k, v in kwargs.items():
             if k in units and v is not None:
                 try:
-                    base_unit_kwargs[k] = v.to(units[k]).m
+                    base_unit_kwargs[k] = v.to(units[k])
                 except AttributeError:
-                    base_unit_kwargs[k] = Q_(v, units[k]).m
+                    base_unit_kwargs[k] = Q(v, units[k])
             else:
                 base_unit_kwargs[k] = v
 
