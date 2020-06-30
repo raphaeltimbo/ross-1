@@ -7,7 +7,7 @@ from ross.materials import *
 @pytest.fixture
 def AISI4140():
     return Material(
-        name="AISI4140", rho=7850, E=203200000000.0, G_s=80000000000.0, color="#525252",
+        name="AISI4140", rho=7850, E=203200000000.0, G_s=80000000000.0, color="#525252"
     )
 
 
@@ -19,37 +19,37 @@ def test_raise_name_material():
 
 def test_E():
     mat = Material(name="test", rho=7850, G_s=80e9, Poisson=0.27)
-    assert_allclose(mat.E, 203.2e9)
-    assert_allclose(mat.G_s, 80e9)
-    assert_allclose(mat.Poisson, 0.27)
+    assert_allclose(mat.E.si.value, 203.2e9)
+    assert_allclose(mat.G_s.si.value, 80e9)
+    assert_allclose(mat.Poisson.si.value, 0.27)
 
 
 def test_G_s():
     mat = Material(name="test", rho=7850, E=203.2e9, Poisson=0.27)
-    assert_allclose(mat.E, 203.2e9)
-    assert_allclose(mat.G_s, 80e9)
-    assert_allclose(mat.Poisson, 0.27)
+    assert_allclose(mat.E.si.value, 203.2e9)
+    assert_allclose(mat.G_s.si.value, 80e9)
+    assert_allclose(mat.Poisson.si.value, 0.27)
 
 
 def test_Poisson():
     mat = Material(name="test", rho=7850, E=203.2e9, G_s=80e9)
-    assert_allclose(mat.E, 203.2e9)
-    assert_allclose(mat.G_s, 80e9)
-    assert_allclose(mat.Poisson, 0.27)
+    assert_allclose(mat.E.si.value, 203.2e9)
+    assert_allclose(mat.G_s.si.value, 80e9)
+    assert_allclose(mat.Poisson.si.value, 0.27)
 
 
 def test_E_G_s_Poisson():
     mat = Material(name="test", rho=7850, E=203.2e9, G_s=80e9)
-    assert_allclose(mat.E, 203.2e9)
-    assert_allclose(mat.G_s, 80e9)
-    assert_allclose(mat.Poisson, 0.27)
+    assert_allclose(mat.E.si.value, 203.2e9)
+    assert_allclose(mat.G_s.si.value, 80e9)
+    assert_allclose(mat.Poisson.si.value, 0.27)
 
 
 def test_specific_material(AISI4140):
-    assert_allclose(AISI4140.rho, 7850)
-    assert_allclose(AISI4140.E, 203.2e9)
-    assert_allclose(AISI4140.G_s, 80e9)
-    assert_allclose(AISI4140.Poisson, 0.27)
+    assert_allclose(AISI4140.rho.si.value, 7850)
+    assert_allclose(AISI4140.E.si.value, 203.2e9)
+    assert_allclose(AISI4140.G_s.si.value, 80e9)
+    assert_allclose(AISI4140.Poisson.si.value, 0.27)
 
 
 def test_error_rho():
@@ -89,5 +89,6 @@ def test_serialization():
 
 def test_repr():
     mat0 = Material(name="obj1", rho=92e1, E=281.21, G_s=20e9)
-    mat1 = eval(repr(mat0))
-    assert mat0 == mat1
+    assert repr(mat0) == (
+        "Material(name=\"obj1\", rho=9.20000e+02 kg / m3, G_s=2.00000e+10 N / m2, E=2.81210e+02 N / m2, color='#525252')"
+    )

@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import toml
 
-from .units import check_units
+from .units import Q, check_units
 
 __all__ = ["Material", "steel"]
 
@@ -72,10 +72,10 @@ class Material:
         elif Poisson is None:
             Poisson = (E / (2 * G_s)) - 1
 
-        self.rho = float(rho)
-        self.E = float(E)
-        self.G_s = float(G_s)
-        self.Poisson = float(Poisson)
+        self.rho = rho
+        self.E = E
+        self.G_s = G_s
+        self.Poisson = Poisson
         self.color = color
 
     def __eq__(self, other):
@@ -272,7 +272,13 @@ class Material:
     def save_material(self):
         """Save the material in the available_materials list."""
         data = Material.get_data()
-        data["Materials"][self.name] = self.__dict__
+        save_dict = self.__dict__.copy()
+        for k, v in save_dict.items():
+            try:
+                save_dict[k] = v.si.value
+            except AttributeError:
+                pass
+        data["Materials"][self.name] = save_dict
         Material.dump_data(data)
 
 
