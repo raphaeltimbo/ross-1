@@ -13,7 +13,7 @@ import toml
 
 from ross.element import Element
 from ross.materials import Material, steel
-from ross.units import check_units
+from ross.units import Q, check_units
 from ross.utils import read_table_file
 
 __all__ = ["ShaftElement", "ShaftElement6DoF"]
@@ -172,13 +172,13 @@ class ShaftElement(Element):
         self.tag = tag
         self.shear_method_calc = shear_method_calc
 
-        self.L = float(L)
-        self.o_d = (float(odl) + float(odr)) / 2
-        self.i_d = (float(idl) + float(idr)) / 2
-        self.idl = float(idl)
-        self.odl = float(odl)
-        self.idr = float(idr)
-        self.odr = float(odr)
+        self.L = L
+        self.o_d = (odl + odr) / 2
+        self.i_d = (idl + idr) / 2
+        self.idl = idl
+        self.odl = odl
+        self.idr = idr
+        self.odr = odr
         self.color = self.material.color
 
         self.alpha = 0.0
@@ -217,14 +217,14 @@ class ShaftElement(Element):
             * (roj ** 2 * delta_ro ** 2 - rij ** 2 * delta_ri ** 2)
             / (2 * Ie_l)
         )
-        gama = np.pi * (roj * delta_ro ** 3 - rij * delta_ri ** 3) / Ie_l
+        gamma = np.pi * (roj * delta_ro ** 3 - rij * delta_ri ** 3) / Ie_l
         delta = np.pi * (delta_ro ** 4 - delta_ri ** 4) / (4 * Ie_l)
 
         self.a1 = a1
         self.a2 = a2
         self.b1 = b1
         self.b2 = b2
-        self.gama = gama
+        self.gamma = gamma
         self.delta = delta
 
         # the area is calculated from the cross section located in the middle
@@ -233,11 +233,11 @@ class ShaftElement(Element):
 
         # Ie is the second moment of area of the cross section - located in
         # the middle of the element - about the neutral plane
-        Ie = Ie_l * (1 + a2 * 0.5 + b2 * 0.5 ** 2 + gama * 0.5 ** 3 + delta * 0.5 ** 4)
+        Ie = Ie_l * (1 + a2 * 0.5 + b2 * 0.5 ** 2 + gamma * 0.5 ** 3 + delta * 0.5 ** 4)
         self.Ie = Ie
         self.Ie_l = Ie_l
 
-        phi = 0
+        phi = Q(0, "")
 
         # geometric center
         c1 = (
@@ -385,14 +385,20 @@ class ShaftElement(Element):
         signature = inspect.signature(self.__init__)
         args_list = list(signature.parameters)
         args = {arg: getattr(self, arg) for arg in args_list}
+        for k, v in args.items():
+            # try to get only values for Quantity objects
+            try:
+                args[k] = v.value
+            except AttributeError:
+                pass
 
         # add material characteristics so that the shaft element can be reconstructed
         # even if the material is not in the available_materials file.
         args["material"] = {
             "name": self.material.name,
-            "rho": self.material.rho,
-            "E": self.material.E,
-            "G_s": self.material.G_s,
+            "rho": self.material.rho.value,
+            "E": self.material.E.value,
+            "G_s": self.material.G_s.value,
             "color": self.material.color,
         }
 
@@ -499,16 +505,17 @@ class ShaftElement(Element):
                [ 0.        , -0.86197637,  0.08667495,  0.        ],
                [ 0.86197637,  0.        ,  0.        ,  0.08667495]])
         """
-        phi = self.phi
-        L = self.L
-        a1 = self.a1
-        a2 = self.a2
-        b1 = self.b1
-        b2 = self.b2
-        delta = self.delta
-        gama = self.gama
-        Ie_l = self.Ie_l
-        A_l = self.A_l
+        phi = self.phi.value
+        L = self.L.value
+        a1 = self.a1.value
+        a2 = self.a2.value
+        b1 = self.b1.value
+        b2 = self.b2.value
+        delta = self.delta.value
+        gamma = self.gamma.value
+        Ie_l = self.Ie_l.value
+        A_l = self.A_l.value
+        rho = self.material.rho.value
 
         m1 = (
             (468 + 882 * phi + 420 * phi ** 2)
@@ -573,44 +580,44 @@ class ShaftElement(Element):
                 [-L*m4,     0,        0, -L**2*m7, -L*m9,     0,        0, L**2*m10],
         ])
         # fmt: on
-        M = self.material.rho * A_l * L * Mt / (1260 * (1 + phi) ** 2)
+        M = rho * A_l * L * Mt / (1260 * (1 + phi) ** 2)
 
         if self.rotary_inertia:
             # fmt: off
-            m11 = 252 + 126 * a2 + 72 * b2 + 45 * gama + 30 * delta
+            m11 = 252 + 126 * a2 + 72 * b2 + 45 * gamma + 30 * delta
             m12 = (
                 21 - 105 * phi
                 + a2 * (21 - 42 * phi)
                 + b2 * (15 - 21 * phi)
-                + gama * (10.5 - 12 * phi)
+                + gamma * (10.5 - 12 * phi)
                 + delta * (7.5 - 7.5 * phi)
             )
             m13 = (
                 21 - 105 * phi
                 - 63 * a2 * phi
                 - b2 * (6 + 42 * phi)
-                - gama * (7.5 + 30 * phi)
+                - gamma * (7.5 + 30 * phi)
                 - delta * (7.5 + 22.5 * phi)
             )
             m14 = (
                 28 + 35 * phi + 70 * phi ** 2
                 + a2 * (7 - 7 * phi + 17.5 * phi ** 2)
                 + b2 * (4 - 7 * phi + 7 * phi ** 2)
-                + gama * (2.75 - 5 * phi + 3.5 * phi ** 2)
+                + gamma * (2.75 - 5 * phi + 3.5 * phi ** 2)
                 + delta * (2 - 3.5 * phi + 2 * phi ** 2)
             )
             m15 = (
                 7 + 35 * phi - 35 * phi ** 2
                 + a2 * (3.5 + 17.5 * phi - 17.5 * phi ** 2)
                 + b2 * (3 + 10.5 * phi - 10.5 * phi ** 2)
-                + gama * (2.75 + 7 * phi - 7 * phi ** 2)
+                + gamma * (2.75 + 7 * phi - 7 * phi ** 2)
                 + delta * (2.5 + 5 * phi - 5 * phi ** 2)
             )
             m16 = (
                 28 + 35 * phi + 70 * phi ** 2
                 + a2 * (21 + 42 * phi + 52.5 * phi ** 2)
                 + b2 * (18 + 42 * phi + 42 * phi ** 2)
-                + gama * (16.25 + 40 * phi + 35 * phi ** 2)
+                + gamma * (16.25 + 40 * phi + 35 * phi ** 2)
                 + delta * (15 + 37.5 * phi + 30 * phi ** 2)
             )
 
@@ -625,7 +632,7 @@ class ShaftElement(Element):
                     [L*m13,      0,         0, -L**2*m15, -L*m13,     0,         0,  L**2*m16],
             ])
             # fmt: on
-            Mr = self.material.rho * Ie_l * Mr / (210 * L * (1 + phi) ** 2)
+            Mr = rho * Ie_l * Mr / (210 * L * (1 + phi) ** 2)
             M = M + Mr
 
         return M
@@ -653,53 +660,54 @@ class ShaftElement(Element):
                [  0.        , -38.62129051,  11.56619973,   0.        ],
                [ 38.62129051,   0.        ,   0.        ,  11.56619973]])
         """
-        L = self.L
-        phi = self.phi
-        a1 = self.a1
-        a2 = self.a2
-        b1 = self.b1
-        b2 = self.b2
-        delta = self.delta
-        gama = self.gama
-        Ie_l = self.Ie_l
+        L = self.L.value
+        phi = self.phi.value
+        a1 = self.a1.value
+        a2 = self.a2.value
+        b1 = self.b1.value
+        b2 = self.b2.value
+        delta = self.delta.value
+        gamma = self.gamma.value
+        Ie_l = self.Ie_l.value
+        E = self.material.E.value
 
         # fmt: off
-        k1 = 1260 + 630 * a2 + 504 * b2 + 441 * gama + 396 * delta
+        k1 = 1260 + 630 * a2 + 504 * b2 + 441 * gamma + 396 * delta
         k2 = (
             630
             + 210 * a2
             + 147 * b2
-            + 126 * gama
+            + 126 * gamma
             + 114 * delta
-            - phi * (105 * a2 + 105 * b2 + 94.5 * gama + 84 * delta)
+            - phi * (105 * a2 + 105 * b2 + 94.5 * gamma + 84 * delta)
         )
         k3 = (
             630
             + 420 * a2
             + 357 * b2
-            + 315 * gama
+            + 315 * gamma
             + 282 * delta
-            + phi * (105 * a2 + 105 * b2 + 94.5 * gama + 84 * delta)
+            + phi * (105 * a2 + 105 * b2 + 94.5 * gamma + 84 * delta)
         )
         k4 = (
             420 + 210 * phi + 105 * phi ** 2
             + a2 * (105 + 52.5 * phi ** 2)
             + b2 * (56 - 35 * phi + 35 * phi ** 2)
-            + gama * (42 - 42 * phi + 26.25 * phi ** 2)
+            + gamma * (42 - 42 * phi + 26.25 * phi ** 2)
             + delta * (36 - 42 * phi + 21 * phi ** 2)
         )
         k5 = (
             210 - 210 * phi - 105 * phi ** 2
             + a2 * (105 - 105 * phi - 52.5 * phi ** 2)
             + b2 * (91 - 70 * phi - 35 * phi ** 2)
-            + gama * (84 - 52.5 * phi - 26.25 * phi ** 2)
+            + gamma * (84 - 52.5 * phi - 26.25 * phi ** 2)
             + delta * (78 - 42 * phi - 21 * phi ** 2)
         )
         k6 = (
             420 + 210 * phi + 105 * phi ** 2
             + a2 * (315 + 210 * phi + 52.5 * phi ** 2)
             + b2 * (266 + 175 * phi + 35 * phi ** 2)
-            + gama * (231 + 147 * phi + 26.25 * phi ** 2)
+            + gamma * (231 + 147 * phi + 26.25 * phi ** 2)
             + delta * (204 + 126 * phi + 21 * phi ** 2)
         )
         k7 = 12 + 6 * a1 + 4 * b1
@@ -728,7 +736,7 @@ class ShaftElement(Element):
             [L*k8,     0,       0, L**2*k9, -L*k8,     0,       0, L**2*k9],
         ])
 
-        K = self.material.E * Ie_l / (105 * L ** 3 * (1 + phi) ** 2) * (K1 + 105 * phi * K2)
+        K = E * Ie_l / (105 * L ** 3 * (1 + phi) ** 2) * (K1 + 105 * phi * K2)
         # fmt: on
 
         return K
@@ -783,49 +791,50 @@ class ShaftElement(Element):
                [ 0.        ,  0.01085902, -0.0067206 ,  0.        ]])
         """
         if self.gyroscopic:
-            phi = self.phi
-            L = self.L
-            a2 = self.a2
-            b2 = self.b2
-            delta = self.delta
-            gama = self.gama
-            Ie_l = self.Ie_l
+            phi = self.phi.value
+            L = self.L.value
+            a2 = self.a2.value
+            b2 = self.b2.value
+            delta = self.delta.value
+            gamma = self.gamma.value
+            Ie_l = self.Ie_l.value
+            rho = self.material.rho.value
 
             # fmt: off
-            g1 = 252 + 126 * a2 + 72 * b2 + 45 * gama + 30 * delta
+            g1 = 252 + 126 * a2 + 72 * b2 + 45 * gamma + 30 * delta
             g2 = (
                 21 - 105 * phi
                 + a2 * (21 - 42 * phi)
                 + b2 * (15 - 21 * phi)
-                + gama * (10.5 - 12 * phi)
+                + gamma * (10.5 - 12 * phi)
                 + delta * (7.5 - 7.5 * phi)
             )
             g3 = (
                 21 - 105 * phi
                 - 63 * a2 * phi
                 - b2 * (6 + 42 * phi)
-                - gama * (7.5 + 30 * phi)
+                - gamma * (7.5 + 30 * phi)
                 - delta * (7.5 + 22.5 * phi)
             )
             g4 = (
                 28 + 35 * phi + 70 * phi ** 2
                 + a2 * (7 - 7 * phi + 17.5 * phi ** 2)
                 + b2 * (4 - 7 * phi + 7 * phi ** 2)
-                + gama * (2.75 - 5 * phi + 3.5 * phi ** 2)
+                + gamma * (2.75 - 5 * phi + 3.5 * phi ** 2)
                 + delta * (2 - 3.5 * phi + 2 * phi ** 2)
             )
             g5 = (
                 7 + 35 * phi - 35 * phi ** 2
                 + a2 * (3.5 + 17.5 * phi - 17.5 * phi ** 2)
                 + b2 * (3 + 10.5 * phi - 10.5 * phi ** 2)
-                + gama * (2.75 + 7 * phi - 7 * phi ** 2)
+                + gamma * (2.75 + 7 * phi - 7 * phi ** 2)
                 + delta * (2.5 + 5 * phi - 5 * phi ** 2)
             )
             g6 = (
                 28 + 35 * phi + 70 * phi ** 2
                 + a2 * (21 + 42 * phi + 52.5 * phi ** 2)
                 + b2 * (18 + 42 * phi + 42 * phi ** 2)
-                + gama * (16.25 + 40 * phi + 35 * phi ** 2)
+                + gamma * (16.25 + 40 * phi + 35 * phi ** 2)
                 + delta * (15 + 37.5 * phi + 30 * phi ** 2)
             )
 
@@ -840,7 +849,7 @@ class ShaftElement(Element):
                     [   0,  L*g3,  L**2*g5,        0,     0, -L*g3, -L**2*g6,        0],
             ])
             # fmt: on
-            G = self.material.rho * Ie_l * 2 * G / (210 * L * (1 + phi) ** 2)
+            G = rho * Ie_l * 2 * G / (210 * L * (1 + phi) ** 2)
 
         else:
             G = np.zeros((8, 8))
@@ -1283,13 +1292,13 @@ class ShaftElement6DoF(ShaftElement):
 
         self.tag = tag
 
-        self.L = float(L)
-        self.o_d = (float(odl) + float(odr)) / 2
-        self.i_d = (float(idl) + float(idr)) / 2
-        self.idl = float(idl)
-        self.odl = float(odl)
-        self.idr = float(idr)
-        self.odr = float(odr)
+        self.L = L
+        self.o_d = (odl + odr) / 2
+        self.i_d = (idl + idr) / 2
+        self.idl = idl
+        self.odl = odl
+        self.idr = idr
+        self.odr = odr
         self.color = self.material.color
 
         # A_l = cross section area from the left side of the element
@@ -1325,14 +1334,14 @@ class ShaftElement6DoF(ShaftElement):
             * (roj ** 2 * delta_ro ** 2 - rij ** 2 * delta_ri ** 2)
             / (2 * Ie_l)
         )
-        gama = np.pi * (roj * delta_ro ** 3 - rij * delta_ri ** 3) / Ie_l
+        gamma = np.pi * (roj * delta_ro ** 3 - rij * delta_ri ** 3) / Ie_l
         delta = np.pi * (delta_ro ** 4 - delta_ri ** 4) / (4 * Ie_l)
 
         self.a1 = a1
         self.a2 = a2
         self.b1 = b1
         self.b2 = b2
-        self.gama = gama
+        self.gamma = gamma
         self.delta = delta
 
         # the area is calculated from the cross section located in the middle
@@ -1341,7 +1350,7 @@ class ShaftElement6DoF(ShaftElement):
 
         # Ie is the second moment of area of the cross section - located in
         # the middle of the element - about the neutral plane
-        Ie = Ie_l * (1 + a2 * 0.5 + b2 * 0.5 ** 2 + gama * 0.5 ** 3 + delta * 0.5 ** 4)
+        Ie = Ie_l * (1 + a2 * 0.5 + b2 * 0.5 ** 2 + gamma * 0.5 ** 3 + delta * 0.5 ** 4)
         self.Ie = Ie
         self.Ie_l = Ie_l
 
@@ -1540,22 +1549,28 @@ class ShaftElement6DoF(ShaftElement):
         (12, 12)
         """
         # temporary material and geometrical constants
-        L = self.L
+        L = self.L.value
+        idl = self.idl.value
+        odl = self.odl.value
+        idr = self.idr.value
+        odr = self.odr.value
+        rho = self.material.rho.value
+
         tempS = np.pi * (
-            ((self.odr / 2) ** 2 + (self.odl / 2) ** 2) / 2
-            - ((self.idr / 2) ** 2 + (self.idl / 2) ** 2) / 2
+            ((odr / 2) ** 2 + (odl / 2) ** 2) / 2
+            - ((idr / 2) ** 2 + (idl / 2) ** 2) / 2
         )
         tempI = (
             np.pi
             / 4
             * (
-                ((self.odr / 2) ** 4 + (self.odl / 2) ** 4) / 2
-                - ((self.idr / 2) ** 4 + (self.idl / 2) ** 4) / 2
+                ((odr / 2) ** 4 + (odl / 2) ** 4) / 2
+                - ((idr / 2) ** 4 + (idl / 2) ** 4) / 2
             )
         )
 
         # element level matrix declaration
-        aux1 = self.material.rho * tempS * L / 420
+        aux1 = rho * tempS * L / 420
         # fmt: off
 
         # Standard mass matrix
@@ -1575,7 +1590,7 @@ class ShaftElement6DoF(ShaftElement):
         ])
 
         # Secondary inertias mass matrix
-        Ms = self.material.rho * tempI / (30 * L) * np.array([
+        Ms = rho * tempI / (30 * L) * np.array([
             [  36,   0, 0,     0,  -3*L, 0, -36,    0, 0,     0,  -3*L, 0],
             [   0,  36, 0,   3*L,     0, 0,   0,  -36, 0,   3*L,     0, 0],
             [   0,   0, 0,     0,     0, 0,   0,    0, 0,     0,     0, 0],
@@ -1591,7 +1606,7 @@ class ShaftElement6DoF(ShaftElement):
         ])
 
         # Axial terms inertia matrix
-        Ma = self.material.rho * tempS * L / 6 * np.array([
+        Ma = rho * tempS * L / 6 * np.array([
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 2, 0, 0, 0, 0, 0, 1, 0, 0, 0],
@@ -1607,7 +1622,7 @@ class ShaftElement6DoF(ShaftElement):
         ])
 
         # Torsional terms inertias matrix
-        Mr = self.material.rho * tempI * L / 6 * np.array([
+        Mr = rho * tempI * L / 6 * np.array([
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -1648,41 +1663,43 @@ class ShaftElement6DoF(ShaftElement):
         T = self.torque
 
         # temporary material and geometrical constants, determined as mean values
-        # from the left and right radii of the taperad shaft
-        L = self.L
+        # from the left and right radii of the tapered shaft
+        L = self.L.value
+        idl = self.idl.value
+        odl = self.odl.value
+        idr = self.idr.value
+        odr = self.odr.value
+        E = self.material.E.value
+        G_s = self.material.G_s.value
+
         tempS = np.pi * (
-            ((self.odr / 2) ** 2 + (self.odl / 2) ** 2) / 2
-            - ((self.idr / 2) ** 2 + (self.idl / 2) ** 2) / 2
+            ((odr / 2) ** 2 + (odl / 2) ** 2) / 2
+            - ((idr / 2) ** 2 + (idl / 2) ** 2) / 2
         )
         tempI = (
             np.pi
             / 4
             * (
-                ((self.odr / 2) ** 4 + (self.odl / 2) ** 4) / 2
-                - ((self.idr / 2) ** 4 + (self.idl / 2) ** 4) / 2
+                ((odr / 2) ** 4 + (odl / 2) ** 4) / 2
+                - ((idr / 2) ** 4 + (idl / 2) ** 4) / 2
             )
         )
         tempJ = (
             np.pi
             / 2
             * (
-                ((self.odr / 2) ** 4 + (self.odl / 2) ** 4) / 2
-                - ((self.idr / 2) ** 4 + (self.idl / 2) ** 4) / 2
+                ((odr / 2) ** 4 + (odl / 2) ** 4) / 2
+                - ((idr / 2) ** 4 + (idl / 2) ** 4) / 2
             )
         )
 
         # temporary variables
-        A = (
-            12
-            * self.material.E
-            * tempI
-            / (self.material.G_s * self.kappa * tempS * L ** 2)
-        )
+        A = 12 * E * tempI / (G_s * self.kappa * tempS * L ** 2)
 
         # auxiliary variables
-        a1 = self.material.E * tempI / ((1 + A) * L ** 3)
-        a2 = self.material.G_s * tempJ / L
-        a3 = self.material.E * tempS / L
+        a1 = E * tempI / ((1 + A) * L ** 3)
+        a2 = G_s * tempJ / L
+        a3 = E * tempS / L
 
         # fmt: off
         # pure stiffness matrix [Kc], added to the axial loads stiffness matrix [Ka],
@@ -1766,19 +1783,25 @@ class ShaftElement6DoF(ShaftElement):
         """
         # temporary material and geometrical constants, determined as mean values
         # from the left and right radii of the taperad shaft
-        L = self.L
+        L = self.L.value
+        idl = self.idl.value
+        odl = self.odl.value
+        idr = self.idr.value
+        odr = self.odr.value
+        rho = self.material.rho.value
+
         tempI = (
             np.pi
             / 4
             * (
-                ((self.odr / 2) ** 4 + (self.odl / 2) ** 4) / 2
-                - ((self.idr / 2) ** 4 + (self.idl / 2) ** 4) / 2
+                ((odr / 2) ** 4 + (odl / 2) ** 4) / 2
+                - ((idr / 2) ** 4 + (idl / 2) ** 4) / 2
             )
         )
 
         # fmt: off
         # dynamic stiffening matrix
-        Kst = self.material.rho * tempI / (15 * L) * np.array([
+        Kst = rho * tempI / (15 * L) * np.array([
             [0, -36, 0,   -3*L, 0, 0, 0,   36, 0,   -3*L, 0, 0],
             [0,   0, 0,      0, 0, 0, 0,    0, 0,      0, 0, 0],
             [0,   0, 0,      0, 0, 0, 0,    0, 0,      0, 0, 0],
@@ -1837,19 +1860,25 @@ class ShaftElement6DoF(ShaftElement):
         if self.gyroscopic:
             # temporary material and geometrical constants, determined as mean values
             # from the left and right radii of the tapered shaft
-            L = self.L
+            L = self.L.value
+            idl = self.idl.value
+            odl = self.odl.value
+            idr = self.idr.value
+            odr = self.odr.value
+            rho = self.material.rho.value
+
             tempI = (
                 np.pi
                 / 4
                 * (
-                    ((self.odr / 2) ** 4 + (self.odl / 2) ** 4) / 2
-                    - ((self.idr / 2) ** 4 + (self.idl / 2) ** 4) / 2
+                    ((odr / 2) ** 4 + (odl / 2) ** 4) / 2
+                    - ((idr / 2) ** 4 + (idl / 2) ** 4) / 2
                 )
             )
 
             # fmt: off
             # Gyroscopic effect matrix
-            G = (self.material.rho * tempI / (15 * L)) * np.array([
+            G = (rho * tempI / (15 * L)) * np.array([
                 [  0, -36, 0,  -3*L,      0, 0,    0,   36, 0,  -3*L,      0, 0],
                 [ 36,   0, 0,     0,   -3*L, 0,  -36,    0, 0,     0,   -3*L, 0],
                 [  0,   0, 0,     0,      0, 0,    0,    0, 0,     0,      0, 0],

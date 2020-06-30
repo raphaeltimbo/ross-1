@@ -39,18 +39,18 @@ def test_index(eb):
 
 
 def test_parameters_eb(eb):
-    assert eb.phi == 0
-    assert eb.L == 0.25
-    assert eb.idl == 0
-    assert eb.odl == 0.05
-    assert eb.idr == 0
-    assert eb.odr == 0.05
-    assert eb.material.E == 211e9
-    assert eb.material.G_s == 81.2e9
-    assert eb.material.rho == 7810
-    assert_almost_equal(eb.material.Poisson, 0.29926108)
-    assert_almost_equal(eb.A, 0.00196349)
-    assert_almost_equal(eb.Ie * 1e7, 3.06796157)
+    assert eb.phi.value == 0
+    assert eb.L.value == 0.25
+    assert eb.idl.value == 0
+    assert eb.odl.value == 0.05
+    assert eb.idr.value == 0
+    assert eb.odr.value == 0.05
+    assert eb.material.E.value == 211e9
+    assert eb.material.G_s.value == 81.2e9
+    assert eb.material.rho.value == 7810
+    assert_almost_equal(eb.material.Poisson.value, 0.29926108)
+    assert_almost_equal(eb.A.value, 0.00196349)
+    assert_almost_equal(eb.Ie.value * 1e7, 3.06796157)
 
 
 def test_mass_matrix_eb(eb):
@@ -96,10 +96,10 @@ def tim():
 
 
 def test_parameters_tim(tim):
-    assert_almost_equal(tim.phi, 0.08795566)
-    assert_almost_equal(tim.material.Poisson, 0.29926108)
-    assert_almost_equal(tim.A, 0.00196349)
-    assert_almost_equal(tim.Ie * 1e7, 3.06796157)
+    assert_almost_equal(tim.phi.value, 0.08795566)
+    assert_almost_equal(tim.material.Poisson.value, 0.29926108)
+    assert_almost_equal(tim.A.value, 0.00196349)
+    assert_almost_equal(tim.Ie.value * 1e7, 3.06796157)
 
 
 def test_mass_matrix_tim(tim):
@@ -154,19 +154,19 @@ def test_from_table():
         )
         el0 = shaft[0]
         assert el0.n == 0
-        assert_allclose(el0.i_d, 0.1409954)
-        assert_allclose(el0.o_d, 0.151003)
+        assert_allclose(el0.i_d.value, 0.1409954)
+        assert_allclose(el0.o_d.value, 0.151003)
 
         mat0 = el0.material
-        assert_allclose(mat0.rho, 7833.41, atol=0.003)
-        assert_allclose(mat0.E, 206842718795.05, rtol=3e-06)
-        assert_allclose(mat0.G_s, 82737087518.02, rtol=2e-06)
+        assert_allclose(mat0.rho.value, 7833.41, atol=0.003)
+        assert_allclose(mat0.E.value, 206842718795.05, rtol=3e-06)
+        assert_allclose(mat0.G_s.value, 82737087518.02, rtol=2e-06)
 
         # test if node is the same for elements in different layers
         assert shaft[8].n == 8
         assert shaft[9].n == 8
-        assert_allclose(shaft[8].material.E, 206842718795.05, rtol=3e-06)
-        assert_allclose(shaft[9].material.E, 6894.75, atol=0.008)
+        assert_allclose(shaft[8].material.E.value, 206842718795.05, rtol=3e-06)
+        assert_allclose(shaft[9].material.E.value, 6894.75, atol=0.008)
 
 
 # Shaft Tapered Element tests
@@ -204,20 +204,20 @@ def test_tapered_index(tap_tim):
 
 
 def test_parameters_tap_tim(tap_tim):
-    assert tap_tim.L == 0.4
-    assert tap_tim.i_d == 0.0
-    assert tap_tim.idl == 0.0
-    assert tap_tim.idr == 0.0
-    assert tap_tim.o_d == 0.175
-    assert tap_tim.odl == 0.25
-    assert tap_tim.odr == 0.1
-    assert tap_tim.material.E == 211e9
-    assert tap_tim.material.G_s == 81.2e9
-    assert tap_tim.material.rho == 7810
-    assert_almost_equal(tap_tim.material.Poisson, 0.29926108)
-    assert_almost_equal(tap_tim.A, 0.024052818754)
-    assert_almost_equal(tap_tim.Ie * 1e5, 4.60385984)
-    assert_almost_equal(tap_tim.phi, 0.4208816002)
+    assert tap_tim.L.value == 0.4
+    assert tap_tim.i_d.value == 0.0
+    assert tap_tim.idl.value == 0.0
+    assert tap_tim.idr.value == 0.0
+    assert tap_tim.o_d.value == 0.175
+    assert tap_tim.odl.value == 0.25
+    assert tap_tim.odr.value == 0.1
+    assert tap_tim.material.E.value == 211e9
+    assert tap_tim.material.G_s.value == 81.2e9
+    assert tap_tim.material.rho.value == 7810
+    assert_almost_equal(tap_tim.material.Poisson.value, 0.29926108)
+    assert_almost_equal(tap_tim.A.value, 0.024052818754)
+    assert_almost_equal(tap_tim.Ie.value * 1e5, 4.60385984)
+    assert_almost_equal(tap_tim.phi.value, 0.4208816002)
 
 
 def test_mass_matrix_tap_tim(tap_tim):
@@ -348,14 +348,14 @@ def s6_eb():
 
 
 def test_s6_parameters_eb(s6_eb):
-    assert s6_eb.L == 0.1
-    assert s6_eb.idl == 25.4 * 1 / 2
-    assert s6_eb.odl == 25.4 * 3 / 4
-    assert s6_eb.idr == 25.4 * 1 / 2
-    assert s6_eb.odr == 25.4 * 3 / 4
-    assert s6_eb.material.E == 211e9
-    assert s6_eb.material.G_s == 81.2e9
-    assert s6_eb.material.rho == 7810
+    assert s6_eb.L.value == 0.1
+    assert s6_eb.idl.value == 25.4 * 1 / 2
+    assert s6_eb.odl.value == 25.4 * 3 / 4
+    assert s6_eb.idr.value == 25.4 * 1 / 2
+    assert s6_eb.odr.value == 25.4 * 3 / 4
+    assert s6_eb.material.E.value == 211e9
+    assert s6_eb.material.G_s.value == 81.2e9
+    assert s6_eb.material.rho.value == 7810
 
 
 def test_s6_M_matrix(s6_eb):
