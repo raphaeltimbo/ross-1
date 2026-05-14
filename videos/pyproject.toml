@@ -1,0 +1,12 @@
+[project]
+name = "ross-videos"
+version = "0.1.0"
+description = "Manim animations explaining ROSS internals"
+requires-python = ">=3.10"
+dependencies = [
+    "manim>=0.18.1",
+    "numpy",
+]
+
+[tool.uv]
+package = false
