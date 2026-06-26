@@ -383,3 +383,50 @@ def test_labyrinth_real_gas_dense_gas_leakage():
     assert real.seal_leakage[0] > ideal.seal_leakage[0]
     # Density correction at this state (Z ~ 0.88) lifts leakage by a few percent.
     assert_allclose(real.seal_leakage[0], ideal.seal_leakage[0], rtol=0.15)
+
+
+def test_coefficients_vs_frequency_synchronous(labyrinth_manual):
+    """Whirl frequency == rotor speed must reproduce the synchronous run()."""
+    Omega = Q_(8000, "RPM").to("rad/s").m
+    # capture synchronous values before the analysis call mutates solver state
+    sync = {a: getattr(labyrinth_manual, a)[0]
+            for a in ("kxx", "kyy", "kxy", "kyx", "cxx", "cyy", "cxy", "cyx")}
+
+    res = labyrinth_manual.coefficients_vs_frequency(Omega, Omega)
+
+    assert res["kxx"].shape == (1, 1)
+    for a in sync:
+        assert_allclose(res[a][0, 0], sync[a], rtol=1e-6)
+    # the element's stored coefficients must be left untouched
+    for a in sync:
+        assert_allclose(getattr(labyrinth_manual, a)[0], sync[a], rtol=1e-12)
+
+
+def test_coefficients_vs_frequency_is_frequency_dependent(labyrinth_manual):
+    """At fixed rotor speed the coefficients must vary with whirl frequency."""
+    Omega = Q_(8000, "RPM").to("rad/s").m
+    whirls = Omega * np.array([0.25, 1.0, 2.0])
+    res = labyrinth_manual.coefficients_vs_frequency(Omega, whirls)
+
+    assert res["kxx"].shape == (1, 3)
+    assert res["cxx"].shape == (1, 3)
+    # antisymmetry preserved at every whirl frequency
+    assert_allclose(res["kyx"], -res["kxy"], rtol=1e-10)
+    assert_allclose(res["cyx"], -res["cxy"], rtol=1e-10)
+    # direct stiffness/damping genuinely change across whirl frequency
+    assert np.ptp(res["kxx"][0]) > 0
+    assert np.ptp(res["cxx"][0]) > 0
+    assert np.all(np.isfinite(res["kxx"])) and np.all(np.isfinite(res["cxx"]))
+
+
+def test_coefficients_vs_frequency_grid_shape(labyrinth_manual):
+    """A (speeds x whirl) grid returns 2-D coefficient arrays."""
+    Omega = Q_(8000, "RPM").to("rad/s").m
+    speeds = Omega * np.array([0.8, 1.0])
+    whirls = Omega * np.array([0.5, 1.0, 1.5, 2.0])
+    res = labyrinth_manual.coefficients_vs_frequency(speeds, whirls)
+
+    assert res["kxx"].shape == (2, 4)
+    assert res["seal_leakage"].shape == (2,)
+    assert_allclose(res["speeds"], speeds)
+    assert_allclose(res["whirl_frequencies"], whirls)

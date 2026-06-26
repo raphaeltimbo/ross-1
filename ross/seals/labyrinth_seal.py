@@ -1061,6 +1061,11 @@ class LabyrinthSeal(SealElement):
             ) + cxx3
 
     def pert(self):
+        # Zero the perturbation workspace so pert() is idempotent and can be
+        # called repeatedly (e.g. swept over whirl frequency) for a base flow
+        # solved once. cg/cx are left intact - they hold the base-flow state.
+        self.gm.fill(0)
+        self.rhs.fill(0)
         gmfull = np.zeros((1000, 1000))
         rhs1 = np.zeros(self.nc * 8)
         rhs2 = np.zeros(self.nc * 8)
@@ -1331,6 +1336,104 @@ class LabyrinthSeal(SealElement):
         coefficients_dict["pert_condition_number"] = self.pert_condition_number
 
         return coefficients_dict
+
+    def coefficients_vs_frequency(self, speeds, whirl_frequencies):
+        """Asynchronous (frequency-dependent) force coefficients.
+
+        Decouples the rotor running speed from the excitation (whirl) frequency.
+        The standard ``run`` path is *synchronous*: a single ``self.omega`` drives
+        both the base flow (swirl and friction, through the rotor surface speed)
+        and the perturbation (the unsteady terms and the damping extraction), so
+        the coefficients are only obtained at ``omega = Omega``.
+
+        The base flow (``vermes``/``zpres``/``zvel``) depends on the rotor speed
+        alone and fully determines the ``cg``/``cx`` perturbation coefficients,
+        which contain no whirl frequency. The whirl frequency enters only through
+        ``pert``. This method therefore solves the base flow once per rotor speed
+        and re-solves ``pert`` for every whirl frequency, yielding coefficients on
+        a ``(speed, whirl frequency)`` grid. Evaluating at a whirl frequency equal
+        to the rotor speed reproduces the synchronous result from ``run``.
+
+        Parameters
+        ----------
+        speeds : float or array_like
+            Rotor angular speed(s) Omega (rad/s).
+        whirl_frequencies : float or array_like
+            Excitation/whirl angular frequencies omega (rad/s).
+
+        Returns
+        -------
+        dict
+            ``kxx, kyy, kxy, kyx, cxx, cyy, cxy, cyx``: each a 2-D array of shape
+            ``(n_speeds, n_whirl)``. ``seal_leakage``: 1-D array of shape
+            ``(n_speeds,)``. ``speeds`` and ``whirl_frequencies``: the 1-D grids.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from ross.seals.labyrinth_seal import LabyrinthSeal
+        >>> from ross.units import Q_
+        >>> Omega = Q_(7000, "RPM").to("rad/s").m
+        >>> seal = LabyrinthSeal(
+        ...     n=0, shaft_radius=Q_(85.3, "mm"), radial_clearance=Q_(0.3, "mm"),
+        ...     n_teeth=14, pitch=Q_(5, "mm"), tooth_height=Q_(4, "mm"),
+        ...     tooth_width=Q_(0.3, "mm"), seal_type="stator", inlet_temperature=300.0,
+        ...     gas_composition={"Nitrogen": 0.79, "Oxygen": 0.21},
+        ...     inlet_pressure=6.9e5, outlet_pressure=1.0e5,
+        ...     frequency=Q_([7000], "RPM"), preswirl=0.112,
+        ... )
+        >>> res = seal.coefficients_vs_frequency(Omega, Omega * np.array([0.5, 1.0, 2.0]))
+        >>> res["kxx"].shape
+        (1, 3)
+        """
+        speeds = np.atleast_1d(np.asarray(speeds, dtype=float))
+        whirls = np.atleast_1d(np.asarray(whirl_frequencies, dtype=float))
+
+        keys = ["kxx", "kyy", "kxy", "kyx", "cxx", "cyy", "cxy", "cyx"]
+        coeffs = {k: np.zeros((speeds.size, whirls.size)) for k in keys}
+        leakage = np.zeros(speeds.size)
+
+        # pert() overwrites the scalar kxx/.../cyx attributes; snapshot the element's
+        # synchronous BearingElement coefficients (and the speed) and restore them so
+        # this analysis call leaves the element unchanged.
+        saved = {a: getattr(self, a, None) for a in (keys + ["frequency"])}
+        try:
+            for si, speed in enumerate(speeds):
+                # --- base flow: solved once per rotor speed (independent of whirl) ---
+                self.frequency = speed
+                self.inlet_swirl_velocity = self.preswirl * speed * self.shaft_radius
+                # __init__ rebinds self.p to the list of per-frequency results; restore
+                # the node-pressure workspace that setup()/vermes() write into.
+                self.p = np.zeros(self.m_x)
+                self.setup()
+                self.vermes()
+                self.zpres()
+                if self.iopt1 == 0:
+                    self.zvel()
+                elif self.iopt1 == 1:
+                    self.zvel_jen()
+                leakage[si] = self.mdot
+
+                # --- perturbation: re-solved per whirl frequency (base flow fixed) ---
+                for wi, whirl in enumerate(whirls):
+                    self.omega = whirl
+                    self.pert()
+                    coeffs["kxx"][si, wi] = self.kxx
+                    coeffs["kyy"][si, wi] = self.kxx
+                    coeffs["kxy"][si, wi] = self.kxy
+                    coeffs["kyx"][si, wi] = self.kyx
+                    coeffs["cxx"][si, wi] = self.cxx
+                    coeffs["cyy"][si, wi] = self.cxx
+                    coeffs["cxy"][si, wi] = self.cxy
+                    coeffs["cyx"][si, wi] = self.cyx
+        finally:
+            for a, v in saved.items():
+                setattr(self, a, v)
+
+        coeffs["seal_leakage"] = leakage
+        coeffs["speeds"] = speeds
+        coeffs["whirl_frequencies"] = whirls
+        return coeffs
 
     def plot_pressure_distribution(
         self, pressure_units="MPa", length_units="m", fig=None, **kwargs
