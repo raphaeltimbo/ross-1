@@ -13,7 +13,7 @@ frequency_range = np.linspace(0, rs.Q_(10000, "RPM").to("rad/s").m, 200)
 response = rotor.run_unbalance_response(
     node=2,
     unbalance_magnitude=0.001,  # kg·m (mass × eccentricity)
-    unbalance_phase=0,          # rad
+    unbalance_phase=0,  # rad
     frequency=frequency_range,
 )
 ```
@@ -30,7 +30,7 @@ Multiple unbalance sources: pass arrays for `node`, `unbalance_magnitude`, `unba
 Uses `Probe` objects to specify measurement locations:
 
 ```python
-probe1 = rs.Probe(node=2, angle=0)                           # radial, 0°
+probe1 = rs.Probe(node=2, angle=0)  # radial, 0°
 probe2 = rs.Probe(node=4, angle=rs.Q_(45, "deg"), tag="DE")  # radial, 45°
 ```
 
@@ -49,17 +49,18 @@ fig = response.plot_bode(probe=[probe1])
 # Polar (Nyquist) plot
 fig = response.plot_polar_bode(probe=[probe1])
 
-# Deflected shape at a specific speed
-fig = response.plot_deflected_shape(speed=rs.Q_(5000, "RPM").to("rad/s").m)
-
-# 2D deflected shape only
-fig = response.plot_deflected_shape_2d(speed=rs.Q_(5000, "RPM").to("rad/s").m)
-
-# Bending moment at a specific speed
-fig = response.plot_bending_moment(speed=rs.Q_(5000, "RPM").to("rad/s").m)
+# Deflected shape / bending moment at a specific speed. The speed must be an
+# EXACT element of the frequency array passed to run_unbalance_response,
+# otherwise ValueError: "No data available for this speed value."
+speed = frequency_range[
+    np.argmin(abs(frequency_range - rs.Q_(5000, "RPM").to("rad/s").m))
+]
+fig = response.plot_deflected_shape(speed=speed)
+fig = response.plot_deflected_shape_2d(speed=speed)
+fig = response.plot_bending_moment(speed=speed)
 ```
 
-Plot unit options: `frequency_units`, `amplitude_units`, `phase_units` (e.g. `"RPM"`, `"m"`, `"deg"`).
+Plot unit options: `plot_magnitude`/`plot_phase`/`plot_bode`/`plot_polar_bode` take `frequency_units` and `amplitude_units` (plus `phase_units`, except `plot_magnitude`); the deflected-shape plots take `amplitude_units`, `phase_units`, `rotor_length_units`; `plot_bending_moment` takes `moment_units` and `rotor_length_units`.
 
 ## Interpreting Results
 
